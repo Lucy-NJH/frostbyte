@@ -57,12 +57,12 @@ EnumItem& getEnumItemFromWrapper(EnumItemWrapper& wrapper) {
     return Enum::enum_map.at(wrapper.enum_name).item_map.at(wrapper.name);
 }
 
-EnumItem& getEnumItemFromValue(const char* enum_name, unsigned int value) {
+EnumItem* getEnumItemFromValue(const char* enum_name, unsigned int value) {
     auto& e = Enum::enum_map.at(enum_name);
     for (auto it = e.item_map.begin(); it != e.item_map.end(); it++)
         if (it->second.value == value)
-            return it->second;
-    throw std::runtime_error("no item in given enum exists with given value");
+            return &it->second;
+    return nullptr;
 }
 
 static void Enum__dtor(lua_State* L, void* ud) {
@@ -86,14 +86,80 @@ static int Enum__tostring(lua_State* L) {
     return 1;
 }
 
+namespace Enum_methods {
+    static int getEnumItems(lua_State* L) {
+        Enum* _enum = lua_checkenum(L, 1);
+
+        lua_createtable(L, _enum->item_map.size(), 0);
+
+        int i = 1;
+        for (auto const& item : _enum->item_map) {
+            lua_pushnumber(L, i++);
+            pushEnumItem(L, _enum->name, item.first);
+            lua_settable(L, 2);
+        }
+
+        return 1;
+    }
+    static int fromName(lua_State* L) {
+        Enum* _enum = lua_checkenum(L, 1);
+        const char* key = luaL_checkstring(L, 2);
+
+        if (_enum->item_map.find(key) == _enum->item_map.end()) {
+            lua_pushnil(L);
+            return 1;
+        }
+
+        return pushEnumItem(L, _enum->name, key);
+    }
+    static int fromValue(lua_State* L) {
+        Enum* _enum = lua_checkenum(L, 1);
+        luaL_checktype(L, 2, LUA_TNUMBER);
+        int value = lua_tonumber(L, 2);
+
+        if (EnumItem* enum_item = getEnumItemFromValue(_enum->name.c_str(), value))
+            return pushEnumItem(L, _enum->name, enum_item->name);
+
+        lua_pushnil(L);
+        return 1;
+    }
+}
+lua_CFunction getEnumMethod(Enum* entry, const char* key) {
+    if (strequal(key, "GetEnumItems"))
+        return Enum_methods::getEnumItems;
+    else if (strequal(key, "FromName"))
+        return Enum_methods::fromName;
+    else if (strequal(key, "FromValue"))
+        return Enum_methods::fromValue;
+
+    return nullptr;
+}
+
 static int Enum__index(lua_State* L) {
     Enum* _enum = lua_checkenum(L, 1);
     const char* key = luaL_checkstring(L, 2);
+
+    lua_CFunction func = getEnumMethod(_enum, key);
+    if (func)
+        return pushFunctionFromLookup(L, func);
 
     if (_enum->item_map.find(key) == _enum->item_map.end())
         luaL_error(L, "%s is not a valid member of \"Enum.%s\"", key, _enum->name.c_str());
 
     return pushEnumItem(L, _enum->name, key);
+}
+
+static int Enum__namecall(lua_State* L) {
+    Enum* _enum = lua_checkenum(L, 1);
+    const char* namecall = lua_namecallatom(L, nullptr);
+    if (!namecall)
+        luaL_error(L, "no namecall method!");
+
+    lua_CFunction func = getEnumMethod(_enum, namecall);
+    if (!func)
+        luaL_error(L, "%s is not a valid member of Enum", namecall);
+
+    return func(L);
 }
 
 EnumItem* checkEnumItem(lua_State* L, int narg) {
@@ -111,10 +177,8 @@ EnumItem* lua_checkenumitem(lua_State* L, int narg, const char* expected_enum) {
         int is_num;
         unsigned i = lua_tointegerx(L, narg, &is_num);
         if (is_num) {
-            // TODO: this is duplicate code from getEnumItemFromValue cuz that doesn't return a ptr
-            for (auto it = e.item_map.begin(); it != e.item_map.end(); it++)
-                if (it->second.value == i)
-                    return &it->second;
+            if (EnumItem* enum_item = getEnumItemFromValue(expected_enum, i))
+                return enum_item;
             luaL_error(L, "Invalid value %d for enum %s", i, expected_enum);
         }
     }
@@ -211,8 +275,7 @@ void setup_enums(lua_State* L) {
     settypemetafield(L, "Enum");
     setfunctionfield(L, Enum__tostring, "__tostring", nullptr);
     setfunctionfield(L, Enum__index, "__index", nullptr);
-    // TODO: Enum methods
-    // setfunctionfield(L, Enum__namecall, "__namecall", nullptr);
+    setfunctionfield(L, Enum__namecall, "__namecall", nullptr);
 
     lua_pop(L, 1);
 
@@ -223,8 +286,6 @@ void setup_enums(lua_State* L) {
     setfunctionfield(L, EnumItem__tostring, "__tostring", nullptr);
     setfunctionfield(L, EnumItem__index, "__index", nullptr);
     setfunctionfield(L, EnumItem__eq, "__eq", nullptr);
-    // TODO: EnumItem methods
-    // setfunctionfield(L, EnumItem__namecall, "__namecall", nullptr);
 
     lua_pop(L, 1);
 

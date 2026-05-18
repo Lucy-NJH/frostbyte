@@ -30,9 +30,9 @@ struct EnumItemWrapper {
 int pushEnumItem(lua_State* L, EnumItemWrapper& wrapper);
 
 EnumItem& getEnumItemFromWrapper(EnumItemWrapper& wrapper);
-EnumItem& getEnumItemFromValue(const char* enum_name, unsigned int value);
+EnumItem* getEnumItemFromValue(const char* enum_name, unsigned int value);
 
-EnumItem* lua_checkenumitem(lua_State* L, int narg, const char* expected_enum = nullptr);
+EnumItem* lua_checkenumitem(lua_State* L, int narg, const char* expected_enum);
 
 void setup_enums(lua_State* L);
 

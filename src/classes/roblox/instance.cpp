@@ -1219,9 +1219,8 @@ void rbxInstanceSetup(lua_State* L, std::string api_dump) {
                     if (default_exists)
                         item_name = default_value;
                     else {
-                        try {
-                            item_name = getEnumItemFromValue(type.c_str(), 0).name;
-                        } catch(std::exception& e) {}
+                        if (EnumItem* enum_item = getEnumItemFromValue(type.c_str(), 0))
+                            item_name = enum_item->name;
                     }
 
                     property->default_value.value = EnumItemWrapper { .name = item_name, .enum_name = type };
