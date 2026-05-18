@@ -5,6 +5,7 @@
 #include "libraries/drawentrylib.hpp"
 #include "ltable.h"
 #include "taskscheduler.hpp"
+#include "environment/debuglib.hpp"
 
 #include "classes/roblox/userinputservice.hpp"
 
@@ -31,7 +32,7 @@ static int fr_identifyexecutor(lua_State* L) {
     return 2;
 }
 
-static int fr_getreg(lua_State* L) {
+int fr_getreg(lua_State* L) {
     lua_pushvalue(L, LUA_REGISTRYINDEX);
     return 1;
 }
@@ -285,7 +286,7 @@ static int fr_iswindowactive(lua_State* L) {
 }
 
 static int fr_setfpscap(lua_State* L) {
-    TaskScheduler::setTargetFps(luaL_checknumberrange(L, 1, 0, static_cast<unsigned>(-1), "target fps"));
+    TaskScheduler::setTargetFps(luaL_checknumberrange(L, 1, 0, static_cast<unsigned>(-1), "target_fps"));
 
     return 0;
 }
@@ -394,6 +395,9 @@ void open_frostbyte_environment(lua_State *L) {
     env_expose(setsafeenv)
     env_expose(issafeenv)
 
+    env_alias(setsafeenv, setuntouched)
+    env_alias(issafeenv, isuntouched)
+
     env_expose(getrawmetatable)
     env_expose(setrawmetatable)
 
@@ -425,6 +429,7 @@ void open_frostbyte_environment(lua_State *L) {
 
     env_expose(tick)
 
+    {
     lua_getglobal(L, "table");
     lua_pushcfunction(L, fr_rawtfreeze, "rawfreeze");
     lua_rawsetfield(L, -2, "rawfreeze");
@@ -434,6 +439,9 @@ void open_frostbyte_environment(lua_State *L) {
     lua_rawsetfield(L, -2, "setfrozen");
 
     lua_pop(L, 1);
+    }
+
+    open_debuglib(L);
 }
 
 }; // namespace frostbyte

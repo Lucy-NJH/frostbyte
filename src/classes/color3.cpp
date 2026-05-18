@@ -158,7 +158,7 @@ static int Color3__index(lua_State* L) {
 
     lua_CFunction func = getColor3Method(color, key);
     if (func)
-        return pushFunctionFromLookup(L, func);
+        return pushFunctionFromLookup(L, func, key);
 
     luaL_error(L, "%s is not a valid member of Color3", key);
 }

@@ -6,6 +6,7 @@
 #include <cstring> // for strcmp for strequal
 
 #include "console.hpp"
+#include "lstate.h"
 #include "nlohmann/json.hpp"
 
 #include "lobject.h"
@@ -22,6 +23,9 @@ namespace frostbyte {
 #define strequal(str1, str2) (strcmp(str1, str2) == 0)
 
 #define luaL_optnumberloose(L, narg, def) (luaL_opt(L, lua_tonumber, narg, def))
+
+// from laux.cpp
+const char* currfuncname(lua_State* L);
 
 enum LuaTag {
     LUA_TAG_SHAREDPTR_OBJECT = 1,
@@ -110,9 +114,9 @@ int fr_print(lua_State* L);
 int fr_warn(lua_State* L);
 
 // if you keep lookup as false, NOTE that FunctionExplorer will ensure functions are in the lookup when explored
-void setfunctionfield(lua_State* L, lua_CFunction func, const char* method, const char* debugname, bool lookup = false);
+void setfunctionfield(lua_State* L, lua_CFunction func, const char* funcname, const char* debugname, bool lookup = false);
 // if you keep lookup as false, NOTE that FunctionExplorer will ensure functions are in the lookup when explored
-void setfunctionfield(lua_State* L, lua_CFunction func, const char* method, bool lookup = false);
+void setfunctionfield(lua_State* L, lua_CFunction func, const char* funcname, bool lookup = false);
 
 void settypemetafield(lua_State* L, const char* type);
 

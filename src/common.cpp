@@ -19,6 +19,16 @@ namespace frostbyte {
 
 bool print_stdout = false;
 
+const char* currfuncname(lua_State* L) {
+    Closure* cl = L->ci > L->base_ci ? curr_func(L) : NULL;
+    const char* debugname = cl && cl->isC ? cl->c.debugname + 0 : NULL;
+
+    if (debugname && strcmp(debugname, "__namecall") == 0)
+        return L->namecall ? getstr(L->namecall) : NULL;
+    else
+        return debugname;
+}
+
 int countDecimals(double value) {
     double intpart;
     double frac = modf(value, &intpart);
@@ -171,7 +181,7 @@ std::string rawtostring(lua_State* L, int index) {
 double luaL_checknumberrange(lua_State* L, int narg, double min, double max, const char* context) {
     double n = luaL_checknumber(L, narg);
     if (n < min || n > max)
-        luaL_error(L, "expected a value between %.f and %.f for %s; got %.f", min, max, context, n);
+        luaL_error(L, "invalid argument #%d to %s (expected a value between %.f and %.f for %s; got %.f)", narg, currfuncname(L), min, max, context, n);
     return n;
 }
 double luaL_optnumberrange(lua_State* L, int narg, double min, double max, const char* context, double def) {
@@ -274,7 +284,7 @@ int pushFunctionFromLookup(lua_State* L, lua_CFunction func, const char* name, l
     });
 }
 
-int addToLookup(lua_State *L, std::function<void()> pushValue, bool keep_value) {
+int addToLookup(lua_State* L, std::function<void()> pushValue, bool keep_value) {
     pushValue();
 
     lua_getglobal(L, "table");
@@ -304,13 +314,13 @@ int addToLookup(lua_State *L, std::function<void()> pushValue, bool keep_value) 
     return index;
 }
 
-int addToStringLookup(lua_State *L, std::string string) {
+int addToStringLookup(lua_State* L, std::string string) {
     lua_getfield(L, LUA_REGISTRYINDEX, STRINGLOOKUP);
     return addToLookup(L, [&L, &string]{
         lua_pushlstring(L, string.c_str(), string.size());
     });
 }
-const char* getFromStringLookup(lua_State *L, int index) {
+const char* getFromStringLookup(lua_State* L, int index) {
     lua_getfield(L, LUA_REGISTRYINDEX, STRINGLOOKUP);
     lua_rawgeti(L, -1, index);
 
@@ -351,20 +361,20 @@ int fr_warn(lua_State* L) {
     return log(L, Console::Message::WARNING);
 }
 
-void setfunctionfield(lua_State *L, lua_CFunction func, const char *method, const char* debugname, bool lookup) {
+void setfunctionfield(lua_State* L, lua_CFunction func, const char* funcname, const char* debugname, bool lookup) {
     assert(lua_istable(L, -1));
 
     if (lookup)
         pushFunctionFromLookup(L, func, debugname);
     else
         lua_pushcfunction(L, func, debugname);
-    lua_setfield(L, -2, method);
+    lua_setfield(L, -2, funcname);
 }
-void setfunctionfield(lua_State *L, lua_CFunction func, const char *method, bool lookup) {
-    setfunctionfield(L, func, method, nullptr, lookup);
+void setfunctionfield(lua_State* L, lua_CFunction func, const char* funcname, bool lookup) {
+    setfunctionfield(L, func, funcname, funcname, lookup);
 }
 
-void settypemetafield(lua_State *L, const char *type) {
+void settypemetafield(lua_State* L, const char *type) {
     assert(lua_istable(L, -1));
     lua_pushstring(L, type);
     lua_rawsetfield(L, -2, "__type");
