@@ -148,7 +148,7 @@ static int EnumItem__index(lua_State* L) {
         lua_pushstring(L, enum_item->name.c_str());
     else if (strequal(key, "Value"))
         lua_pushunsigned(L, enum_item->value);
-    else if (strequal(key, "Enum"))
+    else if (strequal(key, "EnumType"))
         pushEnum(L, enum_item->enum_name);
     else
         luaL_errorL(L, "%s is not a valid member of Enum.%s.%s", key, enum_item->enum_name.c_str(), enum_item->name.c_str());
