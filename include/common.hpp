@@ -108,8 +108,6 @@ void setfunctionfield(lua_State* L, lua_CFunction func, const char* funcname, co
 // if you keep lookup as false, NOTE that FunctionExplorer will ensure functions are in the lookup when explored
 void setfunctionfield(lua_State* L, lua_CFunction func, const char* funcname, bool lookup = false);
 
-void settypemetafield(lua_State* L, const char* type);
-
 std::string sha1ToString(unsigned int* hashed);
 
 }; // namespace frostbyte

@@ -42,7 +42,8 @@ namespace frostbyte {
 
         int newClassMetatable(lua_State* L, int ttag) {
             luaL_newmetatable(L, userdata_names[ttag]);
-            settypemetafield(L, userdata_names[ttag]);
+            lua_pushstring(L, userdata_names[ttag]);
+            lua_rawsetfield(L, -2, "__type");
 
             return 1;
         }

@@ -330,12 +330,6 @@ void setfunctionfield(lua_State* L, lua_CFunction func, const char* funcname, bo
     setfunctionfield(L, func, funcname, funcname, lookup);
 }
 
-void settypemetafield(lua_State* L, const char *type) {
-    assert(lua_istable(L, -1));
-    lua_pushstring(L, type);
-    lua_rawsetfield(L, -2, "__type");
-}
-
 std::string sha1ToString(unsigned int *hashed) {
     char result[51] = "";
     char buf[11];

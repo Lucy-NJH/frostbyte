@@ -177,8 +177,6 @@ void open_vector3lib(lua_State *L) {
 
     // metatable
     userdata::newClassMetatable(L, userdata::Vector3);
-
-    settypemetafield(L, "Vector3");
     setfunctionfield(L, Vector3__tostring, "__tostring");
     setfunctionfield(L, Vector3__index, "__index");
     setfunctionfield(L, Vector3__newindex, "__newindex");
