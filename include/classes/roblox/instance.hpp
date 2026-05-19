@@ -23,8 +23,6 @@
 #include "classes/udim.hpp"
 #include "classes/udim2.hpp"
 
-#include "type_registry.hpp"
-
 #include "lua.h"
 
 // Instance is the base class of all objects. We may adapt to Roblox's choice of an Object abstraction in the future.
@@ -136,8 +134,6 @@ std::vector<std::weak_ptr<rbxInstance>> getNilInstances();
 
 class rbxInstance {
 public:
-    REGISTER_TYPE(rbxInstance)
-
     static std::vector<std::weak_ptr<rbxInstance>> instance_list;
     static std::shared_mutex instance_list_mutex;
 
@@ -165,7 +161,6 @@ public:
     bool isA(rbxClass* target_class);
     bool isA(const char* class_name);
     int pushEvent(lua_State* L, const char* name);
-    void reportChanged(lua_State* L, const char* property);
 
     std::shared_ptr<rbxInstance> findFirstChild(std::string name);
 };
@@ -177,6 +172,7 @@ public:
 
 #define METHOD_INSTANCE_DESTROY "Destroy"
 
+void reportChanged(lua_State* L, std::shared_ptr<rbxInstance> instance, const char* property);
 void destroyInstance(lua_State* L, std::shared_ptr<rbxInstance> instance, bool dont_remove_from_old_parent_children = false);
 void setInstanceParent(lua_State* L, std::shared_ptr<rbxInstance> instance, std::shared_ptr<rbxInstance> new_parent, bool dont_remove_from_old_parent_children = false, bool dont_set_value = false);
 
@@ -394,7 +390,7 @@ void setInstanceValue(std::shared_ptr<rbxInstance> instance, lua_State* L, const
     lock.unlock();
 
     if (!rbxvalue.property->internal && !dont_report_changed)
-        instance->reportChanged(L, name);
+        reportChanged(L, instance, name);
 
     goto DUPLICATE;
     DUPLICATE: ;

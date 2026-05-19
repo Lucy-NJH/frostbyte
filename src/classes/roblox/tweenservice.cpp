@@ -208,7 +208,7 @@ void TweenService::activateTween(lua_State* L, std::shared_ptr<rbxInstance> twee
         playback_state.name = "Playing";
     }
 
-    tween_instance->reportChanged(L, "PlaybackState");
+    reportChanged(L, tween_instance, "PlaybackState");
 
     TweenService::active_tween_list.push_back(tween_instance);
 }
@@ -217,14 +217,14 @@ void TweenService::cancelTween(lua_State* L, std::shared_ptr<rbxInstance> tween_
     if (playback_state.name == "Completed" || playback_state.name == "Cancelled")
         return;
     playback_state.name = "Cancelled";
-    tween_instance->reportChanged(L, "PlaybackState");
+    reportChanged(L, tween_instance, "PlaybackState");
 }
 void TweenService::pauseTween(lua_State* L, std::shared_ptr<rbxInstance> tween_instance) {
     auto& playback_state = getInstanceValue<EnumItemWrapper>(tween_instance, "PlaybackState");
     if (playback_state.name != "Playing")
         return;
     playback_state.name = "Paused";
-    tween_instance->reportChanged(L, "PlaybackState");
+    reportChanged(L, tween_instance, "PlaybackState");
 }
 
 void TweenService::process(lua_State *L) {
@@ -247,7 +247,7 @@ void TweenService::process(lua_State *L) {
         if (tween_object.delay_timer) {
             if (clock >= tween_object.delay_timer) {
                 playback_state.name = "Playing";
-                tween_instance->reportChanged(L, "PlaybackState");
+                reportChanged(L, tween_instance, "PlaybackState");
 
                 tween_object.delay_timer = 0;
                 goto RESET_TIMING;
@@ -360,7 +360,7 @@ void TweenService::process(lua_State *L) {
         // cancel if every tween has been interrupted
         if (!has_active_tween && !tween_object.is_empty) {
             playback_state.name = "Cancelled";
-            tween_instance->reportChanged(L, "PlaybackState");
+            reportChanged(L, tween_instance, "PlaybackState");
             goto COMPLETE;
         }
 
@@ -386,7 +386,7 @@ void TweenService::process(lua_State *L) {
                     tween_object.delay_timer = clock + tween_info.delay_time;
 
                     playback_state.name = "Delayed";
-                    tween_instance->reportChanged(L, "PlaybackState");
+                    reportChanged(L, tween_instance, "PlaybackState");
                     continue;
                 }
 
@@ -394,7 +394,7 @@ void TweenService::process(lua_State *L) {
             }
 
             playback_state.name = "Completed";
-            tween_instance->reportChanged(L, "PlaybackState");
+            reportChanged(L, tween_instance, "PlaybackState");
             goto COMPLETE;
         }
         }

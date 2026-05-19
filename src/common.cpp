@@ -56,14 +56,11 @@ std::map<size_t, Destructor> sharedptr_destructor_list;
 std::map<void*, size_t> object_destructor_map;
 
 void initializeSharedPtrDestructorList(lua_State* L) {
-    #define addConstructor(Class, tagname) {                                                  \
-        lua_setuserdatadtor(L, userdata::tagname, [](lua_State* L, void* ud) { \
-            SharedPtrObject* object = static_cast<SharedPtrObject*>(ud);       \
-\
+    #define addConstructor(Class, tagname) {                                         \
+        lua_setuserdatadtor(L, userdata::tagname, [](lua_State* L, void* ud) {       \
             std::shared_ptr<Class>* ptr = static_cast<std::shared_ptr<Class>*>(ud);  \
             ptr->reset();                                                            \
-            free(object->object); \
-        }); \
+        });                                                                          \
     }
 
     // i created all this because I thought Tasks would do the same thing, but then I realized I could just use states and the userthread callback, so now it's just rbxInstance

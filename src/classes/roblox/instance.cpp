@@ -126,14 +126,19 @@ int rbxInstance::pushEvent(lua_State* L, const char* name) {
     lua_remove(L, -2); // remove signallookup table
     return 1;
 }
-void rbxInstance::reportChanged(lua_State* L, const char* property) {
+void reportChanged(lua_State* L, std::shared_ptr<rbxInstance> instance, const char* property) {
     pushFunctionFromLookup(L, fireRBXScriptSignal);
-    pushEvent(L, "Changed");
-    lua_pushstring(L, property);
+    instance->pushEvent(L, "Changed");
+    if (instance->isA("ValueBase")) {
+        lua_pushinstance(L, instance);
+        lua_pushstring(L, property);
+        lua_call(L, 2, 1);
+    } else
+        lua_pushstring(L, property);
     lua_call(L, 2, 0);
 
     pushFunctionFromLookup(L, fireRBXScriptSignal);
-    pushEvent(L, property);
+    instance->pushEvent(L, property);
     lua_call(L, 1, 0);
 }
 
@@ -329,8 +334,8 @@ void setInstanceValueVariant(std::shared_ptr<rbxInstance> instance, lua_State* L
 
 std::shared_ptr<rbxInstance>& lua_checkinstance(lua_State* L, int narg, const char* class_name) {
     void* ud = userdata::check(L, narg, userdata::Instance);
-    SharedPtrObject* object = static_cast<SharedPtrObject*>(ud);
-    auto instance = static_cast<std::shared_ptr<rbxInstance>*>(object->object);
+    void* object = static_cast<void*>(ud);
+    auto instance = static_cast<std::shared_ptr<rbxInstance>*>(object);
 
     if (class_name && !(*instance)->isA(class_name)) {
         const char* debugname = currfuncname(L);

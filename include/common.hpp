@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include <shared_mutex>
 #include <string>
@@ -7,7 +8,6 @@
 
 #include "nlohmann/json.hpp"
 #include "console.hpp"
-#include "type_registry.hpp"
 #include "userdata.hpp"
 
 #include "lobject.h"
@@ -40,10 +40,6 @@ using Destructor = std::function<void(void*)>;
 
 extern std::map<size_t, Destructor> sharedptr_destructor_list;
 
-struct SharedPtrObject {
-    size_t class_index;
-    void* object;
-};
 void initializeSharedPtrDestructorList(lua_State* L);
 
 using Feedback = std::function<void(std::string)>;
@@ -69,10 +65,8 @@ int addToLookup(lua_State *L, std::function<void()> pushValue, bool keep_value =
 
 template<class T>
 void pushNewSharedPtrObject(lua_State* L, std::shared_ptr<T>& ptr, int ttag) {
-    SharedPtrObject* object = static_cast<SharedPtrObject*>(lua_newuserdatatagged(L, sizeof(SharedPtrObject), ttag));
-    object->class_index = T::class_index();
-    object->object = malloc(sizeof(std::shared_ptr<T>));
-    new(object->object) std::shared_ptr<T>(ptr);
+    void* object = static_cast<void*>(lua_newuserdatatagged(L, sizeof(std::shared_ptr<T>), ttag));
+    new(object) std::shared_ptr<T>(ptr);
 }
 
 template<class T>
