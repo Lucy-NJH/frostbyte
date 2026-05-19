@@ -23,8 +23,8 @@
 #include "classes/vector3.hpp"
 
 #include "common.hpp"
-
 #include "console.hpp"
+#include "userdata.hpp"
 #include "taskscheduler.hpp"
 #include "ui/instanceexplorer.hpp"
 
@@ -328,15 +328,12 @@ void setInstanceValueVariant(std::shared_ptr<rbxInstance> instance, lua_State* L
 }
 
 std::shared_ptr<rbxInstance>& lua_checkinstance(lua_State* L, int narg, const char* class_name) {
-    void* ud = luaL_checkudatareal(L, narg, "Instance");
+    void* ud = userdata::check(L, narg, userdata::Instance);
     SharedPtrObject* object = static_cast<SharedPtrObject*>(ud);
     auto instance = static_cast<std::shared_ptr<rbxInstance>*>(object->object);
 
     if (class_name && !(*instance)->isA(class_name)) {
-        Closure* cl = L->ci > L->base_ci ? curr_func(L) : NULL;
-        assert(cl);
-        assert(cl->isC);
-        const char* debugname = cl->c.debugname + 0;
+        const char* debugname = currfuncname(L);
 
         const char* fmt = "Expected ':' not '.' calling member function %s";
         int size = snprintf(NULL, 0, fmt, debugname);
@@ -997,10 +994,7 @@ int lua_pushinstance(lua_State* L, std::shared_ptr<rbxInstance> instance) {
         return 1;
     }
 
-    return pushFromSharedPtrLookup(L, INSTANCELOOKUP, instance, [&L] {
-        luaL_getmetatable(L, "Instance");
-        lua_setmetatable(L, -2);
-    });
+    return pushFromSharedPtrLookup(L, INSTANCELOOKUP, instance, userdata::Instance);
 }
 namespace rbxInstance_datatype {
     int _new(lua_State* L) {
@@ -1307,9 +1301,7 @@ void rbxInstanceSetup(lua_State* L, std::string api_dump) {
     rbxClass::class_map["Instance"]->methods.at("WaitForChild").func = rbxInstance_methods::waitForChild;
 
     // metatable
-    luaL_newmetatable(L, "Instance");
-
-    settypemetafield(L, "Instance");
+    userdata::newClassMetatable(L, userdata::Instance);
     setfunctionfield(L, rbxInstance__tostring, "__tostring", nullptr);
     setfunctionfield(L, rbxInstance__index, "__index", nullptr);
     setfunctionfield(L, rbxInstance__newindex, "__newindex", nullptr);

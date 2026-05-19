@@ -1,5 +1,6 @@
 #include "classes/roblox/datatypes/enum.hpp"
 #include "common.hpp"
+#include "userdata.hpp"
 
 #include "lua.h"
 #include "lualib.h"
@@ -12,11 +13,11 @@ int pushEnumTable(lua_State* L, std::string name) {
     return pushFromLookup(L, ENUMLOOKUP, [&L, name] { lua_pushstring(L, name.c_str()); }, [&L, name] {
         lua_createtable(L, 2, 0);
 
-        Enum* enum_ptr = static_cast<Enum*>(lua_newuserdatatagged(L, sizeof(Enum), LUA_TAG_ENUM));
+        Enum* enum_ptr = static_cast<Enum*>(lua_newuserdatatagged(L, sizeof(Enum), userdata::Enum));
         new(enum_ptr) Enum;
         *enum_ptr = Enum::enum_map.at(name);
 
-        luaL_getmetatable(L, "Enum");
+        userdata::getClassMetatable(L, userdata::Enum);
         lua_setmetatable(L, -2);
 
         lua_rawseti(L, -2, 1);
@@ -40,11 +41,11 @@ int pushEnumItem(lua_State* L, std::string enum_name, std::string name) {
     EnumItem enum_item = Enum::enum_map.at(enum_name).item_map.at(name);
 
     addToLookup(L, [&L, &enum_item] {
-        EnumItem* enum_item_ptr = static_cast<EnumItem*>(lua_newuserdatatagged(L, sizeof(EnumItem), LUA_TAG_ENUMITEM));
+        EnumItem* enum_item_ptr = static_cast<EnumItem*>(lua_newuserdatatagged(L, sizeof(EnumItem), userdata::EnumItem));
         new(enum_item_ptr) EnumItem;
         *enum_item_ptr = enum_item;
 
-        luaL_getmetatable(L, "EnumItem");
+        userdata::getClassMetatable(L, userdata::EnumItem);
         lua_setmetatable(L, -2);
     }, true);
     return 1;
@@ -75,7 +76,7 @@ static void EnumItem__dtor(lua_State* L, void* ud) {
 }
 
 Enum* lua_checkenum(lua_State* L, int narg) {
-    void* ud = luaL_checkudatareal(L, narg, "Enum");
+    void* ud = userdata::check(L, narg, userdata::Enum);
     return static_cast<Enum*>(ud);
 }
 
@@ -163,7 +164,7 @@ static int Enum__namecall(lua_State* L) {
 }
 
 EnumItem* checkEnumItem(lua_State* L, int narg) {
-    void* ud = luaL_checkudatareal(L, narg, "EnumItem");
+    void* ud = userdata::check(L, narg, userdata::EnumItem);
     auto enum_item = static_cast<EnumItem*>(ud);
 
     return enum_item;
@@ -228,7 +229,7 @@ static int EnumItem__eq(lua_State* L) {
 }
 
 void lua_checkenums(lua_State* L, int narg) {
-    luaL_checkudatareal(L, narg, "Enums");
+    userdata::check(L, narg, userdata::Enums);
 }
 
 static int Enums__tostring(lua_State* L) {
@@ -254,12 +255,10 @@ void setup_enums(lua_State* L) {
     lua_setfield(L, LUA_REGISTRYINDEX, ENUMLOOKUP);
 
     // Enum
-    lua_newuserdata(L, 0);
+    lua_newuserdatatagged(L, 0, userdata::Enums);
 
     // Enums metatable
-    luaL_newmetatable(L, "Enums");
-
-    settypemetafield(L, "Enums");
+    userdata::newClassMetatable(L, userdata::Enums);
     setfunctionfield(L, Enums__tostring, "__tostring", nullptr);
     setfunctionfield(L, Enums__index, "__index", nullptr);
     // TODO: Enums methods
@@ -270,9 +269,7 @@ void setup_enums(lua_State* L) {
     lua_setglobal(L, "Enum");
 
     // Enum metatable
-    luaL_newmetatable(L, "Enum");
-
-    settypemetafield(L, "Enum");
+    userdata::newClassMetatable(L, userdata::Enum);
     setfunctionfield(L, Enum__tostring, "__tostring", nullptr);
     setfunctionfield(L, Enum__index, "__index", nullptr);
     setfunctionfield(L, Enum__namecall, "__namecall", nullptr);
@@ -280,17 +277,15 @@ void setup_enums(lua_State* L) {
     lua_pop(L, 1);
 
     // EnumItem metatable
-    luaL_newmetatable(L, "EnumItem");
-
-    settypemetafield(L, "EnumItem");
+    userdata::newClassMetatable(L, userdata::EnumItem);
     setfunctionfield(L, EnumItem__tostring, "__tostring", nullptr);
     setfunctionfield(L, EnumItem__index, "__index", nullptr);
     setfunctionfield(L, EnumItem__eq, "__eq", nullptr);
 
     lua_pop(L, 1);
 
-    lua_setuserdatadtor(L, LUA_TAG_ENUM, Enum__dtor);
-    lua_setuserdatadtor(L, LUA_TAG_ENUMITEM, EnumItem__dtor);
+    lua_setuserdatadtor(L, userdata::Enum, Enum__dtor);
+    lua_setuserdatadtor(L, userdata::EnumItem, EnumItem__dtor);
 }
 
 }; // namespace frostbyte

@@ -1,5 +1,6 @@
 #include "classes/numbersequencekeypoint.hpp"
 #include "common.hpp"
+#include "userdata.hpp"
 
 #include "lua.h"
 #include "lualib.h"
@@ -7,12 +8,12 @@
 namespace frostbyte {
 
 int pushNumberSequenceKeypoint(lua_State* L, float envelope, float time, float value) {
-    NumberSequenceKeypoint* numbersequencekeypoint = static_cast<NumberSequenceKeypoint*>(lua_newuserdata(L, sizeof(NumberSequenceKeypoint)));
+    NumberSequenceKeypoint* numbersequencekeypoint = static_cast<NumberSequenceKeypoint*>(lua_newuserdatatagged(L, sizeof(NumberSequenceKeypoint), userdata::NumberSequenceKeypoint));
     numbersequencekeypoint->envelope = envelope;
     numbersequencekeypoint->time = time;
     numbersequencekeypoint->value = value;
 
-    luaL_getmetatable(L, "NumberSequenceKeypoint");
+    userdata::getClassMetatable(L, userdata::NumberSequenceKeypoint);
     lua_setmetatable(L, -2);
 
     return 1;
@@ -30,10 +31,10 @@ static int NumberSequenceKeypoint_new(lua_State* L) {
 }
 
 bool lua_isnumbersequencekeypoint(lua_State* L, int index) {
-    return luaL_isudatareal(L, index, "NumberSequenceKeypoint");
+    return userdata::is(L, index, userdata::NumberSequenceKeypoint);
 }
 NumberSequenceKeypoint* lua_checknumbersequencekeypoint(lua_State* L, int index) {
-    void* ud = luaL_checkudatareal(L, index, "NumberSequenceKeypoint");
+    void* ud = userdata::check(L, index, userdata::NumberSequenceKeypoint);
 
     return static_cast<NumberSequenceKeypoint*>(ud);
 }
@@ -84,9 +85,7 @@ void open_numbersequencekeypointlib(lua_State *L) {
     lua_setglobal(L, "NumberSequenceKeypoint");
 
     // metatable
-    luaL_newmetatable(L, "NumberSequenceKeypoint");
-
-    settypemetafield(L, "NumberSequenceKeypoint");
+    userdata::newClassMetatable(L, userdata::NumberSequenceKeypoint);
     setfunctionfield(L, NumberSequenceKeypoint__tostring, "__tostring");
     setfunctionfield(L, NumberSequenceKeypoint__index, "__index");
     setfunctionfield(L, NumberSequenceKeypoint__newindex, "__newindex");

@@ -1,6 +1,7 @@
 #include "classes/rect.hpp"
 #include "classes/vector2.hpp"
 #include "common.hpp"
+#include "userdata.hpp"
 
 #include <cmath>
 #include <cstring>
@@ -12,13 +13,13 @@
 namespace frostbyte {
 
 int pushRect(lua_State* L, float minx, float miny, float maxx, float maxy) {
-    Rect* rect = static_cast<Rect*>(lua_newuserdata(L, sizeof(Rect)));
+    Rect* rect = static_cast<Rect*>(lua_newuserdatatagged(L, sizeof(Rect), userdata::Rect));
     rect->minx = minx;
     rect->miny = miny;
     rect->maxx = maxx;
     rect->maxy = maxy;
 
-    luaL_getmetatable(L, "Rect");
+    userdata::getClassMetatable(L, userdata::Rect);
     lua_setmetatable(L, -2);
 
     return 1;
@@ -48,7 +49,7 @@ static int Rect_new(lua_State* L) {
 }
 
 Rect* lua_checkrect(lua_State* L, int narg) {
-    void* ud = luaL_checkudatareal(L, narg, "Rect");
+    void* ud = userdata::check(L, narg, userdata::Rect);
 
     return static_cast<Rect*>(ud);
 }
@@ -103,9 +104,7 @@ void open_rectlib(lua_State *L) {
     lua_setglobal(L, "Rect");
 
     // metatable
-    luaL_newmetatable(L, "Rect");
-
-    settypemetafield(L, "Rect");
+    userdata::newClassMetatable(L, userdata::Rect);
     setfunctionfield(L, Rect__tostring, "__tostring");
     setfunctionfield(L, Rect__index, "__index");
     setfunctionfield(L, Rect__newindex, "__newindex");

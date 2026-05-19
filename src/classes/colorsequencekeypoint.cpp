@@ -1,6 +1,7 @@
 #include "classes/colorsequencekeypoint.hpp"
 #include "classes/color3.hpp"
 #include "common.hpp"
+#include "userdata.hpp"
 
 #include "lua.h"
 #include "lualib.h"
@@ -8,11 +9,11 @@
 namespace frostbyte {
 
 int pushColorSequenceKeypoint(lua_State* L, float time, Color value) {
-    ColorSequenceKeypoint* colorsequencekeypoint = static_cast<ColorSequenceKeypoint*>(lua_newuserdata(L, sizeof(ColorSequenceKeypoint)));
+    ColorSequenceKeypoint* colorsequencekeypoint = static_cast<ColorSequenceKeypoint*>(lua_newuserdatatagged(L, sizeof(ColorSequenceKeypoint), userdata::ColorSequenceKeypoint));
     colorsequencekeypoint->time = time;
     colorsequencekeypoint->value = value;
 
-    luaL_getmetatable(L, "ColorSequenceKeypoint");
+    userdata::getClassMetatable(L, userdata::ColorSequenceKeypoint);
     lua_setmetatable(L, -2);
 
     return 1;
@@ -29,10 +30,10 @@ static int ColorSequenceKeypoint_new(lua_State* L) {
 }
 
 bool lua_iscolorsequencekeypoint(lua_State* L, int index) {
-    return luaL_isudatareal(L, index, "ColorSequenceKeypoint");
+    return userdata::is(L, index, userdata::ColorSequenceKeypoint);
 }
 ColorSequenceKeypoint* lua_checkcolorsequencekeypoint(lua_State* L, int index) {
-    void* ud = luaL_checkudatareal(L, index, "ColorSequenceKeypoint");
+    void* ud = userdata::check(L, index, userdata::ColorSequenceKeypoint);
 
     return static_cast<ColorSequenceKeypoint*>(ud);
 }
@@ -81,9 +82,7 @@ void open_colorsequencekeypointlib(lua_State *L) {
     lua_setglobal(L, "ColorSequenceKeypoint");
 
     // metatable
-    luaL_newmetatable(L, "ColorSequenceKeypoint");
-
-    settypemetafield(L, "ColorSequenceKeypoint");
+    userdata::newClassMetatable(L, userdata::ColorSequenceKeypoint);
     setfunctionfield(L, ColorSequenceKeypoint__tostring, "__tostring");
     setfunctionfield(L, ColorSequenceKeypoint__index, "__index");
     setfunctionfield(L, ColorSequenceKeypoint__newindex, "__newindex");

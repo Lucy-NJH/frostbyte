@@ -1,5 +1,6 @@
 #include "classes/udim.hpp"
 #include "common.hpp"
+#include "userdata.hpp"
 
 #include "lua.h"
 #include "lualib.h"
@@ -7,11 +8,11 @@
 namespace frostbyte {
 
 int pushUDim(lua_State* L, double scale, double offset) {
-    UDim* udim = static_cast<UDim*>(lua_newuserdata(L, sizeof(UDim)));
+    UDim* udim = static_cast<UDim*>(lua_newuserdatatagged(L, sizeof(UDim), userdata::UDim));
     udim->scale = scale;
     udim->offset = offset;
 
-    luaL_getmetatable(L, "UDim");
+    userdata::getClassMetatable(L, userdata::UDim);
     lua_setmetatable(L, -2);
 
     return 1;
@@ -28,10 +29,10 @@ static int UDim_new(lua_State* L) {
 }
 
 bool lua_isudim(lua_State* L, int index) {
-    return luaL_isudatareal(L, index, "UDim");
+    return userdata::is(L, index, userdata::UDim);
 }
 UDim* lua_checkudim(lua_State* L, int index) {
-    void* ud = luaL_checkudatareal(L, index, "UDim");
+    void* ud = userdata::check(L, index, userdata::UDim);
 
     return static_cast<UDim*>(ud);
 }
@@ -93,9 +94,7 @@ void open_udimlib(lua_State *L) {
     lua_setglobal(L, "UDim");
 
     // metatable
-    luaL_newmetatable(L, "UDim");
-
-    settypemetafield(L, "UDim");
+    userdata::newClassMetatable(L, userdata::UDim);
     setfunctionfield(L, UDim__tostring, "__tostring");
     setfunctionfield(L, UDim__index, "__index");
     setfunctionfield(L, UDim__newindex, "__newindex");

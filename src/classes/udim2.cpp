@@ -1,6 +1,7 @@
 #include "classes/udim2.hpp"
 #include "classes/udim.hpp"
 #include "common.hpp"
+#include "userdata.hpp"
 
 #include "lua.h"
 #include "lualib.h"
@@ -8,11 +9,11 @@
 namespace frostbyte {
 
 int pushUDim2(lua_State* L, UDim x, UDim y) {
-    UDim2* udim2 = static_cast<UDim2*>(lua_newuserdata(L, sizeof(UDim2)));
+    UDim2* udim2 = static_cast<UDim2*>(lua_newuserdatatagged(L, sizeof(UDim2), userdata::UDim2));
     udim2->x = x;
     udim2->y = y;
 
-    luaL_getmetatable(L, "UDim2");
+    userdata::getClassMetatable(L, userdata::UDim2);
     lua_setmetatable(L, -2);
 
     return 1;
@@ -64,7 +65,7 @@ static int UDim2_fromScale(lua_State* L) {
 }
 
 UDim2* lua_checkudim2(lua_State* L, int narg) {
-    void* ud = luaL_checkudatareal(L, narg, "UDim2");
+    void* ud = userdata::check(L, narg, userdata::UDim2);
 
     return static_cast<UDim2*>(ud);
 }
@@ -153,9 +154,7 @@ void open_udim2lib(lua_State *L) {
     lua_setglobal(L, "UDim2");
 
     // metatable
-    luaL_newmetatable(L, "UDim2");
-
-    settypemetafield(L, "UDim2");
+    userdata::newClassMetatable(L, userdata::UDim2);
     setfunctionfield(L, UDim2__tostring, "__tostring");
     setfunctionfield(L, UDim2__index, "__index");
     setfunctionfield(L, UDim2__newindex, "__newindex");

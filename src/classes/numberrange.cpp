@@ -1,5 +1,6 @@
 #include "classes/numberrange.hpp"
 #include "common.hpp"
+#include "userdata.hpp"
 
 #include "lua.h"
 #include "lualib.h"
@@ -7,11 +8,11 @@
 namespace frostbyte {
 
 int pushNumberRange(lua_State* L, float min, float max) {
-    NumberRange* numberrange = static_cast<NumberRange*>(lua_newuserdata(L, sizeof(NumberRange)));
+    NumberRange* numberrange = static_cast<NumberRange*>(lua_newuserdatatagged(L, sizeof(NumberRange), userdata::NumberRange));
     numberrange->min = min;
     numberrange->max = max;
 
-    luaL_getmetatable(L, "NumberRange");
+    userdata::getClassMetatable(L, userdata::NumberRange);
     lua_setmetatable(L, -2);
 
     return 1;
@@ -31,10 +32,10 @@ static int NumberRange_new(lua_State* L) {
 }
 
 bool lua_isnumberrange(lua_State* L, int index) {
-    return luaL_isudatareal(L, index, "NumberRange");
+    return userdata::is(L, index, userdata::NumberRange);
 }
 NumberRange* lua_checknumberrange(lua_State* L, int index) {
-    void* ud = luaL_checkudatareal(L, index, "NumberRange");
+    void* ud = userdata::check(L, index, userdata::NumberRange);
 
     return static_cast<NumberRange*>(ud);
 }
@@ -83,9 +84,7 @@ void open_numberrangelib(lua_State *L) {
     lua_setglobal(L, "NumberRange");
 
     // metatable
-    luaL_newmetatable(L, "NumberRange");
-
-    settypemetafield(L, "NumberRange");
+    userdata::newClassMetatable(L, userdata::NumberRange);
     setfunctionfield(L, NumberRange__tostring, "__tostring");
     setfunctionfield(L, NumberRange__index, "__index");
     setfunctionfield(L, NumberRange__newindex, "__newindex");

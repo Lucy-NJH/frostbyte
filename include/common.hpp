@@ -5,13 +5,14 @@
 #include <string>
 #include <cstring> // for strcmp for strequal
 
-#include "console.hpp"
-#include "lstate.h"
 #include "nlohmann/json.hpp"
+#include "console.hpp"
+#include "type_registry.hpp"
+#include "userdata.hpp"
 
 #include "lobject.h"
 #include "lua.h"
-#include "type_registry.hpp"
+#include "lstate.h"
 
 using json = nlohmann::json;
 
@@ -26,15 +27,6 @@ namespace frostbyte {
 
 // from laux.cpp
 const char* currfuncname(lua_State* L);
-
-enum LuaTag {
-    LUA_TAG_SHAREDPTR_OBJECT = 1,
-    LUA_TAG_ENUM,
-    LUA_TAG_ENUMITEM,
-    LUA_TAG_TWEENINFO,
-    LUA_TAG_NUMBER_SEQUENCE,
-    LUA_TAG_COLOR_SEQUENCE,
-};
 
 extern bool print_stdout;
 
@@ -52,7 +44,7 @@ struct SharedPtrObject {
     size_t class_index;
     void* object;
 };
-void initializeSharedPtrDestructorList();
+void initializeSharedPtrDestructorList(lua_State* L);
 
 using Feedback = std::function<void(std::string)>;
 using OnKill = std::function<void()>;
@@ -65,9 +57,6 @@ std::string rawtostring(lua_State* L, int index);
 double luaL_checknumberrange(lua_State* L, int narg, double min, double max, const char* context);
 double luaL_optnumberrange(lua_State* L, int narg, double min, double max, const char* context, double def = 0);
 
-bool luaL_isudatareal(lua_State* L, int ud, const char* tname);
-void* luaL_checkudatareal(lua_State* L, int ud, const char* tname);
-
 int createweaktable(lua_State* L, int narr, int nrec);
 int newweaktable(lua_State* L);
 
@@ -79,19 +68,20 @@ int pushFunctionFromLookup(lua_State* L, lua_CFunction func, const char* name = 
 int addToLookup(lua_State *L, std::function<void()> pushValue, bool keep_value = false);
 
 template<class T>
-void pushNewSharedPtrObject(lua_State* L, std::shared_ptr<T>& ptr) {
-    SharedPtrObject* object = static_cast<SharedPtrObject*>(lua_newuserdatatagged(L, sizeof(SharedPtrObject), LUA_TAG_SHAREDPTR_OBJECT));
+void pushNewSharedPtrObject(lua_State* L, std::shared_ptr<T>& ptr, int ttag) {
+    SharedPtrObject* object = static_cast<SharedPtrObject*>(lua_newuserdatatagged(L, sizeof(SharedPtrObject), ttag));
     object->class_index = T::class_index();
     object->object = malloc(sizeof(std::shared_ptr<T>));
     new(object->object) std::shared_ptr<T>(ptr);
 }
 
 template<class T>
-int pushFromSharedPtrLookup(lua_State* L, const char* lookup, std::shared_ptr<T>& ptr, std::function<void(void)> initialize) {
-    return pushFromLookup(L, lookup, ptr.get(), [&L, &ptr, &initialize](){
-        pushNewSharedPtrObject(L, ptr);
+int pushFromSharedPtrLookup(lua_State* L, const char* lookup, std::shared_ptr<T>& ptr, int ttag) {
+    return pushFromLookup(L, lookup, ptr.get(), [&L, &ptr, &ttag](){
+        pushNewSharedPtrObject(L, ptr, ttag);
 
-        initialize();
+        userdata::getClassMetatable(L, ttag);
+        lua_setmetatable(L, -2);
     });
 }
 

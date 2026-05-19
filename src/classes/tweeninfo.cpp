@@ -1,6 +1,7 @@
 #include "classes/tweeninfo.hpp"
 #include "classes/roblox/datatypes/enum.hpp"
 #include "common.hpp"
+#include "userdata.hpp"
 
 #include "lua.h"
 #include "lualib.h"
@@ -8,12 +9,12 @@
 namespace frostbyte {
 
 int pushTweenInfo(lua_State* L, TweenInfo tweeninfo) {
-    TweenInfo* new_tweeninfo = static_cast<TweenInfo*>(lua_newuserdatatagged(L, sizeof(TweenInfo), LUA_TAG_TWEENINFO));
+    TweenInfo* new_tweeninfo = static_cast<TweenInfo*>(lua_newuserdatatagged(L, sizeof(TweenInfo), userdata::TweenInfo));
     new(new_tweeninfo) TweenInfo;
 
     *new_tweeninfo = tweeninfo;
 
-    luaL_getmetatable(L, "TweenInfo");
+    userdata::getClassMetatable(L, userdata::TweenInfo);
     lua_setmetatable(L, -2);
 
     return 1;
@@ -40,7 +41,7 @@ static int TweenInfo_new(lua_State* L) {
 }
 
 TweenInfo* lua_checktweeninfo(lua_State* L, int narg) {
-    void* ud = luaL_checkudatareal(L, narg, "TweenInfo");
+    void* ud = userdata::check(L, narg, userdata::TweenInfo);
 
     return static_cast<TweenInfo*>(ud);
 }
@@ -108,16 +109,14 @@ void open_tweeninfolib(lua_State *L) {
     lua_setglobal(L, "TweenInfo");
 
     // metatable
-    luaL_newmetatable(L, "TweenInfo");
-
-    settypemetafield(L, "TweenInfo");
+    userdata::newClassMetatable(L, userdata::TweenInfo);
     setfunctionfield(L, TweenInfo__tostring, "__tostring");
     setfunctionfield(L, TweenInfo__index, "__index");
     setfunctionfield(L, TweenInfo__newindex, "__newindex");
 
     lua_pop(L, 1);
 
-    lua_setuserdatadtor(L, LUA_TAG_TWEENINFO, [](lua_State* L, void* ud) {
+    lua_setuserdatadtor(L, userdata::TweenInfo, [](lua_State* L, void* ud) {
         TweenInfo* tweeninfo_ptr = static_cast<TweenInfo*>(ud);
         tweeninfo_ptr->~TweenInfo();
     });

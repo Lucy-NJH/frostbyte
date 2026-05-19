@@ -4,6 +4,7 @@
 #include "classes/roblox/camera.hpp"
 #include "classes/vector2.hpp"
 #include "common.hpp"
+#include "userdata.hpp"
 
 #include "fontloader.hpp"
 #include "imageloader.hpp"
@@ -142,7 +143,7 @@ void DrawEntry::destroy(lua_State* L, bool dont_erase) {
         DrawEntry::draw_list.erase(std::find(DrawEntry::draw_list.begin(), DrawEntry::draw_list.end(), this));
     }
 
-    luaL_getmetatable(L, "DrawEntry");
+    userdata::getClassMetatable(L, userdata::DrawEntry);
     lua_getfield(L, -1, "objects");
 
     lua_pushnumber(L, lookup_index);
@@ -155,7 +156,7 @@ void DrawEntry::destroy(lua_State* L, bool dont_erase) {
 }
 
 #define DrawEntry_new_branch(type) if (strequal(class_name, #type)) { \
-    ud = lua_newuserdata(L, sizeof(DrawEntry##type)); \
+    ud = lua_newuserdatatagged(L, sizeof(DrawEntry##type), userdata::DrawEntry); \
     new(ud) DrawEntry##type(); \
 
 
@@ -187,7 +188,7 @@ DrawEntry* pushNewDrawEntry(lua_State* L, const char* class_name) {
 
     sortDrawList();
 
-    luaL_getmetatable(L, "DrawEntry");
+    userdata::getClassMetatable(L, userdata::DrawEntry);
     lua_pushvalue(L, -1);
     lua_setmetatable(L, -3);
 
@@ -207,7 +208,7 @@ static int DrawEntry_new(lua_State* L) {
 }
 
 DrawEntry* lua_checkdrawentry(lua_State* L, int index) {
-    void* ud = luaL_checkudatareal(L, index, "DrawEntry");
+    void* ud = userdata::check(L, index, userdata::DrawEntry);
 
     return static_cast<DrawEntry*>(ud);
 }
@@ -306,7 +307,7 @@ DrawEntry* DrawEntry::clone(lua_State* L) {
 }
 
 static int DrawEntry_getObjects(lua_State* L) {
-    luaL_getmetatable(L, "DrawEntry");
+    userdata::getClassMetatable(L, userdata::DrawEntry);
     lua_getfield(L, -1, "objects");
 
     return 1;
@@ -756,7 +757,7 @@ int fr_isrenderobject(lua_State *L) {
     if (!lua_isuserdata(L, 1))
         luaL_typeerrorL(L, 1, "userdata");
 
-    const bool is = luaL_isudatareal(L, 1, "DrawEntry");
+    const bool is = userdata::is(L, 1, userdata::DrawEntry);
 
     if (!lua_isnone(L, 2)) {
         const char* class_name = luaL_checkstring(L, 2);
@@ -801,7 +802,7 @@ void open_drawentrylib(lua_State *L) {
     lua_setglobal(L, "DrawEntry");
 
     // metatable
-    luaL_newmetatable(L, "DrawEntry");
+    userdata::newClassMetatable(L, userdata::DrawEntry);
 
     newweaktable(L);
     lua_setfield(L, -2, "objects");

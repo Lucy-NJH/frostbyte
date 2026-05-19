@@ -4,6 +4,7 @@
 #include "classes/roblox/datatypes/rbxscriptsignal.hpp"
 #include "common.hpp"
 #include "console.hpp"
+#include "userdata.hpp"
 
 #include <cassert>
 
@@ -40,7 +41,7 @@ struct InstructionWrapper {
 void stephook(lua_State* L, lua_Debug* ar);
 
 InstructionWrapper* lua_checkinstruction(lua_State* L, int arg) {
-    void* ud = luaL_checkudatareal(L, arg, "InstructionWrapper");
+    void* ud = userdata::check(L, arg, userdata::InstructionWrapper);
 
     return static_cast<InstructionWrapper*>(ud);
 }
@@ -419,7 +420,7 @@ void open_instructionlib(lua_State *L) {
     lua_setglobal(L, "instructionlib");
 
     // metatable
-    luaL_newmetatable(L, "InstructionWrapper");
+    userdata::newClassMetatable(L, userdata::InstructionWrapper);
 
     setfunctionfield(L, instruction__index, "__index");
     setfunctionfield(L, instruction__newindex, "__newindex");
@@ -463,7 +464,7 @@ void stephook(lua_State* L, lua_Debug* ar) {
     else
         wrapper->aux = nullptr;
 
-    luaL_getmetatable(L, "InstructionWrapper");
+    userdata::getClassMetatable(L, userdata::InstructionWrapper);
     lua_setmetatable(L, -2);
 
     setclvalue(L, L->top, this_cl);

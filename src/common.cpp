@@ -2,6 +2,7 @@
 #include "console.hpp"
 #include "ludata.h"
 #include "taskscheduler.hpp"
+#include "userdata.hpp"
 
 #include "classes/roblox/instance.hpp"
 
@@ -54,16 +55,19 @@ double getSeconds(lua_State* L, int arg) {
 std::map<size_t, Destructor> sharedptr_destructor_list;
 std::map<void*, size_t> object_destructor_map;
 
-void initializeSharedPtrDestructorList() {
-    #define addConstructor(Class) {                                                  \
-        sharedptr_destructor_list[Class::class_index()] = [] (void* ud) {            \
+void initializeSharedPtrDestructorList(lua_State* L) {
+    #define addConstructor(Class, tagname) {                                                  \
+        lua_setuserdatadtor(L, userdata::tagname, [](lua_State* L, void* ud) { \
+            SharedPtrObject* object = static_cast<SharedPtrObject*>(ud);       \
+\
             std::shared_ptr<Class>* ptr = static_cast<std::shared_ptr<Class>*>(ud);  \
             ptr->reset();                                                            \
-        };                                                                           \
+            free(object->object); \
+        }); \
     }
 
     // i created all this because I thought Tasks would do the same thing, but then I realized I could just use states and the userthread callback, so now it's just rbxInstance
-    addConstructor(rbxInstance)
+    addConstructor(rbxInstance, Instance)
 
     #undef addConstructor
 }
@@ -190,52 +194,6 @@ double luaL_optnumberrange(lua_State* L, int narg, double min, double max, const
         n = luaL_checknumberrange(L, narg, min, max, context);
     }
     return n;
-}
-
-// from Luau/VM/src/laux.cpp
-bool getUdataReal(lua_State* L, void*& out, int ud, const char* tname) {
-    if (lua_isnone(L, ud))
-        return false;
-
-    const TValue* o = luaA_toobject(L, ud);
-    if (ttype(o) != LUA_TUSERDATA || uvalue(o)->tag == UTAG_PROXY)
-        return false;
-
-    if (!lua_getmetatable(L, ud))
-        return false;
-
-    lua_getfield(L, LUA_REGISTRYINDEX, tname);
-    if (!lua_rawequal(L, -1, -2))
-        return false;
-
-    lua_pop(L, 2); // remove both metatables
-    out = uvalue(o)->data;
-    return true;
-}
-
-bool luaL_isudatareal(lua_State* L, int ud, const char* tname) {
-    int top = lua_gettop(L);
-    void* result;
-    if (!getUdataReal(L, result, ud, tname))
-        return false;
-
-    const int items = lua_gettop(L) - top;
-    if (items)
-        lua_pop(L, items);
-
-    return true;
-}
-void* luaL_checkudatareal(lua_State* L, int ud, const char* tname) {
-    int top = lua_gettop(L);
-    void* result;
-    if (!getUdataReal(L, result, ud, tname))
-        luaL_typeerrorL(L, ud, tname);
-
-    const int items = lua_gettop(L) - top;
-    if (items)
-        lua_pop(L, items);
-
-    return result;
 }
 
 int createweaktable(lua_State* L, int narr, int nrec) {

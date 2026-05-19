@@ -228,14 +228,7 @@ int main(int argc, char** argv) {
     open_vector2lib(L);
     open_vector3lib(L);
 
-    initializeSharedPtrDestructorList();
-
-    lua_setuserdatadtor(L, LUA_TAG_SHAREDPTR_OBJECT, [](lua_State* L, void* ud) {
-        SharedPtrObject* object = static_cast<SharedPtrObject*>(ud);
-
-        sharedptr_destructor_list[object->class_index](object->object);
-        free(object->object);
-    });
+    initializeSharedPtrDestructorList(L);
 
     rbxInstanceSetup(L, api_dump);
 

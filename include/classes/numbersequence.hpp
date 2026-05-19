@@ -7,6 +7,7 @@
 namespace frostbyte {
 
 struct NumberSequence {
+    // TODO: use a std::array?
     std::vector<NumberSequenceKeypoint> keypoint_list;
 };
 

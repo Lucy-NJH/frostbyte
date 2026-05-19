@@ -7,6 +7,7 @@
 namespace frostbyte {
 
 struct ColorSequence {
+    // TODO: use a std::array?
     std::vector<ColorSequenceKeypoint> keypoint_list;
 };
 

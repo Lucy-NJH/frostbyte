@@ -2,6 +2,8 @@
 #include "classes/roblox/instance.hpp"
 #include "common.hpp"
 #include "environment.hpp"
+#include "userdata.hpp"
+
 #include "lua.h"
 #include "lualib.h"
 
@@ -60,8 +62,8 @@ int fr_cache_replace(lua_State* L) {
 static int fr_cloneref(lua_State* L) {
     auto instance = lua_checkinstance(L, 1);
 
-    pushNewSharedPtrObject(L, instance);
-    luaL_getmetatable(L, "Instance");
+    pushNewSharedPtrObject(L, instance, userdata::Instance);
+    userdata::getClassMetatable(L, userdata::Instance);
     lua_setmetatable(L, -2);
 
     return 1;

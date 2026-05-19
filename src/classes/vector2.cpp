@@ -1,5 +1,6 @@
 #include "classes/vector2.hpp"
 #include "common.hpp"
+#include "userdata.hpp"
 
 #include <cmath>
 #include <cstring>
@@ -11,11 +12,11 @@
 namespace frostbyte {
 
 int pushVector2(lua_State* L, float x, float y) {
-    Vector2* vector2 = static_cast<Vector2*>(lua_newuserdata(L, sizeof(Vector2)));
+    Vector2* vector2 = static_cast<Vector2*>(lua_newuserdatatagged(L, sizeof(Vector2), userdata::Vector2));
     vector2->x = x;
     vector2->y = y;
 
-    luaL_getmetatable(L, "Vector2");
+    userdata::getClassMetatable(L, userdata::Vector2);
     lua_setmetatable(L, -2);
 
     return 1;
@@ -32,7 +33,7 @@ static int Vector2_new(lua_State* L) {
 }
 
 Vector2* lua_checkvector2(lua_State* L, int narg) {
-    void* ud = luaL_checkudatareal(L, narg, "Vector2");
+    void* ud = userdata::check(L, narg, userdata::Vector2);
 
     return static_cast<Vector2*>(ud);
 }
@@ -172,9 +173,7 @@ void open_vector2lib(lua_State *L) {
     lua_setglobal(L, "Vector2");
 
     // metatable
-    luaL_newmetatable(L, "Vector2");
-
-    settypemetafield(L, "Vector2");
+    userdata::newClassMetatable(L, userdata::Vector2);
     setfunctionfield(L, Vector2__tostring, "__tostring");
     setfunctionfield(L, Vector2__index, "__index");
     setfunctionfield(L, Vector2__newindex, "__newindex");

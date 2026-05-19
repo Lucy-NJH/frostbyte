@@ -1,5 +1,6 @@
 #include "classes/color3.hpp"
 #include "common.hpp"
+#include "userdata.hpp"
 
 #include <algorithm>
 #include <cstring>
@@ -10,13 +11,13 @@
 namespace frostbyte {
 
 int pushColor(lua_State* L, double r, double g, double b) {
-    Color* color = static_cast<Color*>(lua_newuserdata(L, sizeof(Color)));
+    Color* color = static_cast<Color*>(lua_newuserdatatagged(L, sizeof(Color), userdata::Color3));
     color->r = r;
     color->g = g;
     color->b = b;
     color->a = 255;
 
-    luaL_getmetatable(L, "Color3");
+    userdata::getClassMetatable(L, userdata::Color3);
     lua_setmetatable(L, -2);
 
     return 1;
@@ -66,10 +67,10 @@ static int Color3_fromHex(lua_State* L) {
 }
 
 bool lua_iscolor(lua_State* L, int index) {
-    return luaL_isudatareal(L, index, "Color3");
+    return userdata::is(L, index, userdata::Color3);
 }
 Color* lua_checkcolor(lua_State* L, int narg) {
-    void* ud = luaL_checkudatareal(L, narg, "Color3");
+    void* ud = userdata::check(L, narg, userdata::Color3);
 
     return static_cast<Color*>(ud);
 }
@@ -212,9 +213,7 @@ void open_color3lib(lua_State *L) {
     lua_setglobal(L, "Color3");
 
     // metatable
-    luaL_newmetatable(L, "Color3");
-
-    settypemetafield(L, "Color3");
+    userdata::newClassMetatable(L, userdata::Color3);
     setfunctionfield(L, Color3__tostring, "__tostring");
     setfunctionfield(L, Color3__index, "__index");
     setfunctionfield(L, Color3__newindex, "__newindex");

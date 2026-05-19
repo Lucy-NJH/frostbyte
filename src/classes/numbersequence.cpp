@@ -1,6 +1,7 @@
 #include "classes/numbersequence.hpp"
 #include "classes/numbersequencekeypoint.hpp"
 #include "common.hpp"
+#include "userdata.hpp"
 
 #include "lua.h"
 #include "lualib.h"
@@ -8,12 +9,12 @@
 namespace frostbyte {
 
 int pushNumberSequence(lua_State* L, const std::vector<NumberSequenceKeypoint>& keypoint_list) {
-    NumberSequence* numbersequence = static_cast<NumberSequence*>(lua_newuserdatatagged(L, sizeof(NumberSequence), LUA_TAG_NUMBER_SEQUENCE));
+    NumberSequence* numbersequence = static_cast<NumberSequence*>(lua_newuserdatatagged(L, sizeof(NumberSequence), userdata::NumberSequence));
     new(numbersequence) NumberSequence;
 
     numbersequence->keypoint_list = keypoint_list;
 
-    luaL_getmetatable(L, "NumberSequence");
+    userdata::getClassMetatable(L, userdata::NumberSequence);
     lua_setmetatable(L, -2);
 
     return 1;
@@ -60,10 +61,10 @@ static int NumberSequence_new(lua_State* L) {
 }
 
 bool lua_isnumbersequence(lua_State* L, int index) {
-    return luaL_isudatareal(L, index, "NumberSequence");
+    return userdata::is(L, index, userdata::NumberSequence);
 }
 NumberSequence* lua_checknumbersequence(lua_State* L, int index) {
-    void* ud = luaL_checkudatareal(L, index, "NumberSequence");
+    void* ud = userdata::check(L, index, userdata::NumberSequence);
 
     return static_cast<NumberSequence*>(ud);
 }
@@ -128,16 +129,14 @@ void open_numbersequencelib(lua_State *L) {
     lua_setglobal(L, "NumberSequence");
 
     // metatable
-    luaL_newmetatable(L, "NumberSequence");
-
-    settypemetafield(L, "NumberSequence");
+    userdata::newClassMetatable(L, userdata::NumberSequence);
     setfunctionfield(L, NumberSequence__tostring, "__tostring");
     setfunctionfield(L, NumberSequence__index, "__index");
     setfunctionfield(L, NumberSequence__newindex, "__newindex");
 
     lua_pop(L, 1);
 
-    lua_setuserdatadtor(L, LUA_TAG_NUMBER_SEQUENCE, [](lua_State* L, void* ud) {
+    lua_setuserdatadtor(L, userdata::NumberSequence, [](lua_State* L, void* ud) {
         NumberSequence* number_sequence = static_cast<NumberSequence*>(ud);
         number_sequence->~NumberSequence();
     });

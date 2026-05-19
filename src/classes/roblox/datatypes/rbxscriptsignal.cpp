@@ -3,6 +3,7 @@
 
 #include "common.hpp"
 #include "taskscheduler.hpp"
+#include "userdata.hpp"
 
 #include "lua.h"
 #include "lualib.h"
@@ -12,12 +13,12 @@ namespace frostbyte {
 int pushNewRBXScriptSignal(lua_State* L, std::string name) {
     lua_getfield(L, LUA_REGISTRYINDEX, SIGNALCONNECTIONLISTLOOKUP);
 
-    rbxScriptSignal* signal = static_cast<rbxScriptSignal*>(lua_newuserdata(L, sizeof(rbxScriptSignal)));
+    rbxScriptSignal* signal = static_cast<rbxScriptSignal*>(lua_newuserdatatagged(L, sizeof(rbxScriptSignal), userdata::RBXScriptSignal));
     new(signal) rbxScriptSignal();
 
     signal->name.assign(name);
 
-    luaL_getmetatable(L, "RBXScriptSignal");
+    userdata::getClassMetatable(L, userdata::RBXScriptSignal);
     lua_setmetatable(L, -2);
 
     lua_pushvalue(L, -1);
@@ -30,7 +31,7 @@ int pushNewRBXScriptSignal(lua_State* L, std::string name) {
 }
 
 rbxScriptSignal* lua_checkrbxscriptsignal(lua_State* L, int narg) {
-    void* ud = luaL_checkudatareal(L, narg, "RBXScriptSignal");
+    void* ud = userdata::check(L, narg, userdata::RBXScriptSignal);
 
     return static_cast<rbxScriptSignal*>(ud);
 }
@@ -96,7 +97,9 @@ namespace rbxScriptSignal_methods {
 };
 lua_CFunction getrbxScriptSignalMethod(const char* key) {
     // TODO: Parallel Luau
-    if (strequal(key, "Connect") || strequal(key, "connect") || strequal(key, "ConnectParallel") || strequal(key, "connectParallel"))
+    if (strequal(key, "Connect") || strequal(key, "connect") ||
+        strequal(key, "ConnectParallel") || strequal(key, "connectParallel")
+    )
         return rbxScriptSignal_methods::connect;
     else if (strequal(key, "Wait") || strequal(key, "wait"))
         return rbxScriptSignal_methods::wait;
@@ -230,9 +233,7 @@ void setup_rbxScriptSignal(lua_State *L) {
     lua_setfield(L, LUA_REGISTRYINDEX, SIGNALCONNECTIONLISTLOOKUP);
 
     // metatable
-    luaL_newmetatable(L, "RBXScriptSignal");
-
-    settypemetafield(L, "RBXScriptSignal");
+    userdata::newClassMetatable(L, userdata::RBXScriptSignal);
     setfunctionfield(L, rbxScriptSignal__tostring, "__tostring");
     setfunctionfield(L, rbxScriptSignal__index, "__index");
     setfunctionfield(L, rbxScriptSignal__newindex, "__newindex");

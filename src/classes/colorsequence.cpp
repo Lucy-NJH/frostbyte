@@ -1,6 +1,7 @@
 #include "classes/colorsequence.hpp"
 #include "classes/color3.hpp"
 #include "common.hpp"
+#include "userdata.hpp"
 
 #include "lua.h"
 #include "lualib.h"
@@ -8,12 +9,12 @@
 namespace frostbyte {
 
 int pushColorSequence(lua_State* L, const std::vector<ColorSequenceKeypoint>& keypoint_list) {
-    ColorSequence* colorsequence = static_cast<ColorSequence*>(lua_newuserdatatagged(L, sizeof(ColorSequence), LUA_TAG_COLOR_SEQUENCE));
+    ColorSequence* colorsequence = static_cast<ColorSequence*>(lua_newuserdatatagged(L, sizeof(ColorSequence), userdata::ColorSequence));
     new(colorsequence) ColorSequence;
 
     colorsequence->keypoint_list = keypoint_list;
 
-    luaL_getmetatable(L, "ColorSequence");
+    userdata::getClassMetatable(L, userdata::ColorSequence);
     lua_setmetatable(L, -2);
 
     return 1;
@@ -59,10 +60,10 @@ static int ColorSequence_new(lua_State* L) {
 }
 
 bool lua_iscolorsequence(lua_State* L, int index) {
-    return luaL_isudatareal(L, index, "ColorSequence");
+    return userdata::is(L, index, userdata::ColorSequence);
 }
 ColorSequence* lua_checkcolorsequence(lua_State* L, int index) {
-    void* ud = luaL_checkudatareal(L, index, "ColorSequence");
+    void* ud = userdata::check(L, index, userdata::ColorSequence);
 
     return static_cast<ColorSequence*>(ud);
 }
@@ -127,16 +128,14 @@ void open_colorsequencelib(lua_State *L) {
     lua_setglobal(L, "ColorSequence");
 
     // metatable
-    luaL_newmetatable(L, "ColorSequence");
-
-    settypemetafield(L, "ColorSequence");
+    userdata::newClassMetatable(L, userdata::ColorSequence);
     setfunctionfield(L, ColorSequence__tostring, "__tostring");
     setfunctionfield(L, ColorSequence__index, "__index");
     setfunctionfield(L, ColorSequence__newindex, "__newindex");
 
     lua_pop(L, 1);
 
-    lua_setuserdatadtor(L, LUA_TAG_COLOR_SEQUENCE, [](lua_State* L, void* ud) {
+    lua_setuserdatadtor(L, userdata::ColorSequence, [](lua_State* L, void* ud) {
         ColorSequence* color_sequence = static_cast<ColorSequence*>(ud);
         color_sequence->~ColorSequence();
     });

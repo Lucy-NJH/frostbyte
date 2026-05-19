@@ -1,5 +1,6 @@
 #include "classes/roblox/datatypes/rbxscriptconnection.hpp"
 #include "common.hpp"
+#include "userdata.hpp"
 
 #include "lapi.h"
 #include "lua.h"
@@ -35,10 +36,10 @@ void rbxScriptConnection::destroy(lua_State* L) {
 }
 
 int pushNewRBXScriptConnection(lua_State* L, std::function<void()> pushValue) {
-    rbxScriptConnection* connection = static_cast<rbxScriptConnection*>(lua_newuserdata(L, sizeof(rbxScriptConnection)));
+    rbxScriptConnection* connection = static_cast<rbxScriptConnection*>(lua_newuserdatatagged(L, sizeof(rbxScriptConnection), userdata::RBXScriptConnection));
     new(connection) rbxScriptConnection();
 
-    luaL_getmetatable(L, "RBXScriptConnection");
+    userdata::getClassMetatable(L, userdata::RBXScriptConnection);
     lua_setmetatable(L, -2);
 
     lua_getfield(L, LUA_REGISTRYINDEX, RBXSCRIPTCONNECTION_METHODLOOKUP);
@@ -74,7 +75,7 @@ int pushNewRBXScriptConnection(lua_State* L, int func_index) {
 }
 
 rbxScriptConnection* lua_checkrbxscriptconnection(lua_State* L, int narg) {
-    void* ud = luaL_checkudatareal(L, narg, "RBXScriptConnection");
+    void* ud = userdata::check(L, narg, userdata::RBXScriptConnection);
 
     return static_cast<rbxScriptConnection*>(ud);
 }
@@ -139,9 +140,7 @@ static int rbxScriptConnection__namecall(lua_State* L) {
 }
 
 void setup_rbxScriptConnection(lua_State *L) {
-    luaL_newmetatable(L, "RBXScriptConnection");
-
-    settypemetafield(L, "RBXScriptConnection");
+    userdata::newClassMetatable(L, userdata::RBXScriptConnection);
     setfunctionfield(L, rbxScriptConnection__tostring, "__tostring", nullptr);
     setfunctionfield(L, rbxScriptConnection__index, "__index", nullptr);
     setfunctionfield(L, rbxScriptConnection__newindex, "__newindex", nullptr);

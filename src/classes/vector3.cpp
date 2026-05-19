@@ -1,5 +1,6 @@
 #include "classes/vector3.hpp"
 #include "common.hpp"
+#include "userdata.hpp"
 
 #include <cstring>
 
@@ -10,12 +11,12 @@
 namespace frostbyte {
 
 int pushVector3(lua_State* L, float x, float y, float z) {
-    Vector3* vector3 = static_cast<Vector3*>(lua_newuserdata(L, sizeof(Vector3)));
+    Vector3* vector3 = static_cast<Vector3*>(lua_newuserdatatagged(L, sizeof(Vector3), userdata::Vector3));
     vector3->x = x;
     vector3->y = y;
     vector3->z = z;
 
-    luaL_getmetatable(L, "Vector3");
+    userdata::getClassMetatable(L, userdata::Vector3);
     lua_setmetatable(L, -2);
 
     return 1;
@@ -33,7 +34,7 @@ static int Vector3_new(lua_State* L) {
 }
 
 Vector3* lua_checkvector3(lua_State* L, int narg) {
-    void* ud = luaL_checkudatareal(L, narg, "Vector3");
+    void* ud = userdata::check(L, narg, userdata::Vector3);
 
     return static_cast<Vector3*>(ud);
 }
@@ -175,7 +176,7 @@ void open_vector3lib(lua_State *L) {
     lua_setglobal(L, "Vector3");
 
     // metatable
-    luaL_newmetatable(L, "Vector3");
+    userdata::newClassMetatable(L, userdata::Vector3);
 
     settypemetafield(L, "Vector3");
     setfunctionfield(L, Vector3__tostring, "__tostring");
