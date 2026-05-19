@@ -309,7 +309,6 @@ int fr_debug_setstack(lua_State* L) {
     int top = ci->top - ci->base;
 
     int index = luaL_checknumberrange(L, 2, 1, top, "index");
-    luaA_pushobject(L, ci->base + index - 1);
 
     luaL_checkany(L, 3);
 
