@@ -3,18 +3,21 @@
 #include "environment.hpp"
 
 #include "lapi.h"
+#include "ldebug.h"
 #include "lfunc.h"
 #include "lgc.h"
 #include "lobject.h"
 #include "lstate.h"
 #include "lstring.h"
 #include "lua.h"
+#include "luaconf.h"
 #include "lualib.h"
+#include <variant>
 
 namespace frostbyte {
 
 // from ldebug.cpp's  lua_getinfo
-Closure* levelToClosure(lua_State* L, int level) {
+Closure* levelToClosure(lua_State* L, int level, CallInfo** ci_out = nullptr) {
     Closure* f = nullptr;
     CallInfo* ci = nullptr;
 
@@ -32,6 +35,8 @@ Closure* levelToClosure(lua_State* L, int level) {
         f = clvalue(func);
     } else if (unsigned(level) < unsigned(L->ci - L->base_ci)) {
         ci = L->ci - level;
+        if (ci_out)
+            *ci_out = ci;
         LUAU_ASSERT(ttisfunction(ci->func));
         f = clvalue(ci->func);
     }
@@ -50,7 +55,7 @@ int checkStackLevel(lua_State* L, int level) {
     return 1;
 }
 
-Closure* getClosure(lua_State* L, int index) {
+Closure* getClosure(lua_State* L, int index, CallInfo** ci_out = nullptr) {
     Closure* f = nullptr;
 
     int type = lua_type(L, index);
@@ -60,7 +65,7 @@ Closure* getClosure(lua_State* L, int index) {
             int level = lua_tointeger(L, 1);
             checkStackLevel(L, level);
 
-            f = levelToClosure(L, level);
+            f = levelToClosure(L, level, ci_out);
             break;
         } case LUA_TFUNCTION:
             f = clvalue(luaA_toobject(L, index));
@@ -117,6 +122,144 @@ int fr_debug_getcallstack(lua_State* L) {
         luaA_pushobject(L, ci->func);
         lua_settable(L, table);
     } while (ci < end_ci);
+
+    return 1;
+}
+
+// ldebug.cpp
+static const char* getfuncname(Closure* cl)
+{
+    if (cl->isC) {
+        if (cl->c.debugname)
+            return cl->c.debugname;
+    } else {
+        Proto* p = cl->l.p;
+
+        if (p->debugname)
+            return getstr(p->debugname);
+    }
+    return nullptr;
+}
+static int getCurrentpc(lua_State* L, CallInfo* ci) {
+    return pcRel(ci->savedpc, ci_func(ci)->l.p);
+}
+
+static int getCurrentLine(lua_State* L, CallInfo* ci) {
+    return luaG_getline(ci_func(ci)->l.p, getCurrentpc(L, ci));
+}
+int fr_debug_getinfo(lua_State* L) {
+    CallInfo* callinfo = nullptr;
+    Closure* closure = getClosure(L, 1, &callinfo);
+    const char* what = luaL_optstring(L, 2, "sluanf");
+
+    std::optional<const char*> source;
+    std::optional<const char*> _what;
+    std::optional<int> linedefined;
+    std::optional<const char*> short_src;
+    std::optional<int> currentline;
+    std::optional<int> nups;
+    std::optional<int> is_vararg;
+    std::optional<int> numparams;
+    std::optional<const char*> name;
+    bool func = false;
+
+    char shortsrc_buf[LUA_IDSIZE];
+
+    for (; *what; what++) {
+        switch (*what) {
+            case 's':
+                if (closure->isC) {
+                    source = "=[C]";
+                    _what = "C";
+                    linedefined = -1;
+                    short_src = "[C]";
+                } else {
+                    TString* clsource = closure->l.p->source;
+                    source = getstr(clsource);
+                    _what = "Lua";
+                    linedefined = closure->l.p->linedefined;
+                    short_src = luaO_chunkid(shortsrc_buf, sizeof(shortsrc_buf), getstr(clsource), clsource->len);
+                }
+                break;
+            case 'l':
+                if (closure->isC)
+                    currentline = -1;
+                else if (callinfo)
+                    currentline = getCurrentLine(L, callinfo);
+                else
+                    currentline = closure->l.p->linedefined;
+                break;
+            case 'u':
+                nups = closure->nupvalues;
+                break;
+            case 'a':
+                if (closure->isC) {
+                    is_vararg = 1;
+                    numparams = 0;
+                } else {
+                    is_vararg = closure->l.p->is_vararg;
+                    numparams = closure->l.p->numparams;
+                }
+                break;
+            case 'n':
+                // TODO: this is copied from auxgetinfo.. why does it use callinfo??
+                name = callinfo ? getfuncname(ci_func(callinfo)) :  getfuncname(closure);
+                break;
+            case 'f':
+                func = true;
+                break;
+        }
+    }
+
+    lua_createtable(L, 0, 9);
+    int table = lua_absindex(L, -1);
+
+    if (source) {
+        lua_pushstring(L, source.value());
+        lua_setfield(L, table, "source");
+    }
+    if (_what) {
+        lua_pushstring(L, _what.value());
+        lua_setfield(L, table, "what");
+    }
+    if (linedefined) {
+        lua_pushnumber(L, linedefined.value());
+        lua_setfield(L, table, "linedefined");
+    }
+    if (short_src) {
+        lua_pushstring(L, short_src.value());
+        lua_setfield(L, table, "short_src");
+    }
+
+    if (currentline) {
+        lua_pushnumber(L, currentline.value());
+        lua_setfield(L, table, "currentline");
+    }
+
+    if (nups) {
+        lua_pushnumber(L, nups.value());
+        lua_setfield(L, table, "nups");
+    }
+
+    if (is_vararg) {
+        lua_pushnumber(L, is_vararg.value());
+        lua_setfield(L, table, "is_vararg");
+    }
+    if (numparams) {
+        lua_pushnumber(L, numparams.value());
+        lua_setfield(L, table, "numparams");
+    }
+
+    if (name) {
+        lua_pushstring(L, name.value());
+        lua_setfield(L, table, "name");
+    }
+
+    if (func) {
+        lua_pushnil(L);
+        setclvalue(L, L->top - 1, closure);
+        lua_setfield(L, table, "func");
+    }
 
     return 1;
 }
@@ -336,6 +479,8 @@ void open_debuglib(lua_State* L) {
 
     setfunctionfield(L, fr_debug_validlevel, "validlevel");
     setfunctionfield(L, fr_debug_getcallstack, "getcallstack");
+
+    setfunctionfield(L, fr_debug_getinfo, "getinfo");
 
     setfunctionfield(L, fr_debug_getprotos, "getprotos");
     setfunctionfield(L, fr_debug_getproto, "getproto");
