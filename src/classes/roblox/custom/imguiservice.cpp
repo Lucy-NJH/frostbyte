@@ -62,7 +62,11 @@ namespace ImGuiService_methods {
         const char* label = luaL_checkstring(L, 1);
         std::shared_ptr<rbxInstance> boolvalue = lua_checkinstance(L, 2, "BoolValue");
 
-        lua_pushboolean(L, ImGui::Checkbox(label, &getInstanceValue<bool>(boolvalue, "Value")));
+        bool changed = ImGui::Checkbox(label, &getInstanceValue<bool>(boolvalue, "Value"));
+        if (changed)
+            reportChanged(L, boolvalue, "Value");
+
+        lua_pushboolean(L, changed);
         return 1;
     }
     static int bullet(lua_State* L) {
@@ -73,7 +77,7 @@ namespace ImGuiService_methods {
     static int beginCombo(lua_State* L) {
         const char* label = luaL_checkstring(L, 1);
 
-        lua_pushboolean(L, ImGui::BeginCombo(label, "testing123"));
+        lua_pushboolean(L, ImGui::BeginCombo(label, label));
         return 1;
     }
     static int endCombo(lua_State* L) {
@@ -102,8 +106,10 @@ namespace ImGuiService_methods {
         const bool changed = ImGui::Combo(label, &value, items, item_count);
         free(items);
 
-        if (changed)
+        if (changed) {
             *value_ptr = value;
+            reportChanged(L, intvalue, "Value");
+        }
 
         lua_pushboolean(L, changed);
         return 1;
@@ -113,7 +119,11 @@ namespace ImGuiService_methods {
         const char* label = luaL_checkstring(L, 1);
         std::shared_ptr<rbxInstance> stringvalue = lua_checkinstance(L, 2, "StringValue");
 
-        lua_pushboolean(L, ImGui_STDString(label, getInstanceValue<std::string>(stringvalue, "Value")));
+        bool changed = ImGui_STDString(label, getInstanceValue<std::string>(stringvalue, "Value"));
+        if (changed)
+            reportChanged(L, stringvalue, "Value");
+
+        lua_pushboolean(L, changed);
         return 1;
     }
 
@@ -131,7 +141,7 @@ namespace ImGuiService_methods {
             color->r = col[0] * 255.f;
             color->g = col[1] * 255.f;
             color->b = col[2] * 255.f;
-            setInstanceValue(color3value, L, "Value", *color);
+            reportChanged(L, color3value, "Value");
         }
 
         lua_pushboolean(L, changed);

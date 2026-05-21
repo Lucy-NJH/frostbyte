@@ -12,6 +12,22 @@ str.Value = "hello world"
 
 local color = Instance.new("Color3Value")
 
+window_active.Changed:Connect(function(value)
+    warn("window_active - ", value)
+end)
+toggle1.Changed:Connect(function(value)
+    warn("toggle1 - ", value)
+end)
+combo1_value.Changed:Connect(function(value)
+    warn("combo1_value - ", value)
+end)
+str.Changed:Connect(function(value)
+    warn("str - ", value)
+end)
+color.Changed:Connect(function(value)
+    warn("color - ", value)
+end)
+
 local render_connection
 render_connection = ImGui.Render:Connect(function()
     if ImGui.Begin("Lua Window", window_active) then

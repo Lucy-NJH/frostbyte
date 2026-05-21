@@ -113,6 +113,8 @@ bool rbxInstance::isA(const char* class_name) {
     return isA(rbxClass::class_map.at(class_name).get());
 }
 
+int rbxInstance__index(lua_State* L);
+
 int rbxInstance::pushEvent(lua_State* L, const char* name) {
     lua_getfield(L, LUA_REGISTRYINDEX, SIGNALLOOKUP);
     lua_pushlightuserdata(L, this);
@@ -130,6 +132,7 @@ void reportChanged(lua_State* L, std::shared_ptr<rbxInstance> instance, const ch
     pushFunctionFromLookup(L, fireRBXScriptSignal);
     instance->pushEvent(L, "Changed");
     if (instance->isA("ValueBase")) {
+        lua_pushcfunction(L, rbxInstance__index, "__index");
         lua_pushinstance(L, instance);
         lua_pushstring(L, property);
         lua_call(L, 2, 1);
