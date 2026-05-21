@@ -13,12 +13,11 @@ int main() {
     AddIncludePaths(executable, "./include", "./dependencies/json/include", "./dependencies/curl/include", "./dependencies/simde", "./dependencies/uuid_v4", "./dependencies/ImGuiFileDialog");
 
     AddFile(executable, "./src/*.cpp");
-    AddFile(executable, "./src/classes/*.cpp");
-    AddFile(executable, "./src/classes/roblox/*.cpp");
-    AddFile(executable, "./src/classes/roblox/custom/*.cpp");
-    AddFile(executable, "./src/classes/roblox/datatypes/*.cpp");
     AddFile(executable, "./src/libraries/*.cpp");
     AddFile(executable, "./src/ui/*.cpp");
+    AddFile(executable, "./src/engine/classes/*.cpp");
+    AddFile(executable, "./src/engine/classes/frostbyte/*.cpp");
+    AddFile(executable, "./src/engine/datatypes/*.cpp");
 
     AddIncludePaths(executable, "./dependencies/Luau/Analysis/include");
     AddIncludePaths(executable, "./dependencies/Luau/Ast/include");

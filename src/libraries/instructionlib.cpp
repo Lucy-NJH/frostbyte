@@ -1,7 +1,6 @@
 #include "libraries/instructionlib.hpp"
 
-#include "Luau/BytecodeUtils.h"
-#include "classes/roblox/datatypes/rbxscriptsignal.hpp"
+#include "engine/datatypes/rbxscriptsignal.hpp"
 #include "common.hpp"
 #include "console.hpp"
 #include "userdata.hpp"
@@ -15,6 +14,7 @@
 #include "lobject.h"
 #include "lapi.cpp"
 #include "Luau/Bytecode.h"
+#include "Luau/BytecodeUtils.h"
 
 namespace frostbyte {
 

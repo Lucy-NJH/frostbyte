@@ -1,7 +1,6 @@
 #include "ui/instanceexplorer.hpp"
 #include "ui/ui.hpp"
-#include "classes/roblox/datatypes/enum.hpp"
-#include "classes/roblox/instance.hpp"
+#include "engine/classes/instance.hpp"
 
 #include "imgui.h"
 

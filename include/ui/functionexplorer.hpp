@@ -1,6 +1,6 @@
 #pragma once
 
-#include "classes/roblox/instance.hpp"
+#include "engine/classes/instance.hpp"
 #include "lobject.h"
 #include "lua.h"
 

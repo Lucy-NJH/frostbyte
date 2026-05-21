@@ -1,13 +1,12 @@
 #pragma once
 
 #include "engine/classes/instance.hpp"
-
 #include "lua.h"
 
 namespace frostbyte {
 
-void UI_InstanceExplorer_init(std::shared_ptr<rbxInstance> datamodel);
+void ImGuiService_init(lua_State *L, std::shared_ptr<rbxInstance> datamodel);
 
-void UI_InstanceExplorer_render(lua_State* L);
+void ImGuiService_render(lua_State* L);
 
 }; // namespace frostbyte

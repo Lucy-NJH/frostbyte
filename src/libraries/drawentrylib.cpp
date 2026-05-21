@@ -1,10 +1,12 @@
 #include "libraries/drawentrylib.hpp"
+
 #include "basedrawing.hpp"
-#include "classes/color3.hpp"
-#include "classes/roblox/camera.hpp"
-#include "classes/vector2.hpp"
 #include "common.hpp"
 #include "userdata.hpp"
+
+#include "engine/classes/camera.hpp"
+#include "engine/datatypes/color3.hpp"
+#include "engine/datatypes/vector2.hpp"
 
 #include "fontloader.hpp"
 #include "imageloader.hpp"

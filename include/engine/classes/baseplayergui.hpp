@@ -1,0 +1,17 @@
+#pragma once
+
+#include "engine/classes/instance.hpp"
+
+#include "lua.h"
+
+#include <initializer_list>
+
+namespace frostbyte {
+
+std::weak_ptr<rbxInstance> getClickableGuiObject();
+std::vector<std::weak_ptr<rbxInstance>> getGuiObjectsHovered();
+
+void rbxInstance_BasePlayerGui_render(lua_State* L, bool anyImGui);
+void rbxInstance_BasePlayerGui_init(lua_State* L, std::initializer_list<std::shared_ptr<rbxInstance>> initial_gui_storage_list);
+
+};

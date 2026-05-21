@@ -1,7 +1,7 @@
 #pragma once
 
-#include "classes/udim.hpp"
-#include "classes/udim2.hpp"
+#include "engine/datatypes/udim.hpp"
+#include "engine/datatypes/udim2.hpp"
 
 #include "imgui.h"
 #include "raylib.h"

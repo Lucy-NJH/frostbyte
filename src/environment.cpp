@@ -1,13 +1,14 @@
 #include "environment.hpp"
-#include "classes/roblox/datatypes/rbxscriptsignal.hpp"
-#include "classes/roblox/runservice.hpp"
-#include "common.hpp"
-#include "libraries/drawentrylib.hpp"
-#include "ltable.h"
-#include "taskscheduler.hpp"
-#include "libraries/debuglib.hpp"
 
-#include "classes/roblox/userinputservice.hpp"
+#include "common.hpp"
+#include "taskscheduler.hpp"
+
+#include "engine/classes/userinputservice.hpp"
+#include "engine/classes/runservice.hpp"
+#include "engine/datatypes/rbxscriptsignal.hpp"
+
+#include "libraries/drawentrylib.hpp"
+#include "libraries/debuglib.hpp"
 
 #include <chrono>
 #include <string>
@@ -21,6 +22,7 @@
 #include "lmem.h"
 #include "lobject.h"
 #include "lstate.h"
+#include "ltable.h"
 
 namespace frostbyte {
 

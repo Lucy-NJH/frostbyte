@@ -1,5 +1,6 @@
 #include "libraries/cachelib.hpp"
-#include "classes/roblox/instance.hpp"
+
+#include "engine/classes/instance.hpp"
 #include "common.hpp"
 #include "environment.hpp"
 #include "userdata.hpp"

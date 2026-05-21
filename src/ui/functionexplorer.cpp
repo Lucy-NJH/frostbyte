@@ -2,7 +2,7 @@
 #include "ui/tableexplorer.hpp"
 #include "ui/ui.hpp"
 
-#include "classes/roblox/serviceprovider.hpp"
+#include "engine/classes/serviceprovider.hpp"
 
 #include "taskscheduler.hpp"
 

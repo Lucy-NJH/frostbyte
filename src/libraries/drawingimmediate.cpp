@@ -1,17 +1,17 @@
 #include "libraries/drawingimmediate.hpp"
-#include "basedrawing.hpp"
-#include "classes/color3.hpp"
-#include "classes/roblox/datatypes/rbxscriptsignal.hpp"
 
-#include "classes/vector2.hpp"
 #include "common.hpp"
+#include "basedrawing.hpp"
+
+#include "engine/datatypes/color3.hpp"
+#include "engine/datatypes/rbxscriptsignal.hpp"
+#include "engine/datatypes/vector2.hpp"
 
 #include "fontloader.hpp"
 #include "lua.h"
 #include "lualib.h"
 
 #include <set>
-#include <unordered_set>
 
 namespace frostbyte {
 

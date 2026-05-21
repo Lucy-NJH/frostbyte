@@ -1,10 +1,9 @@
 #include "common.hpp"
 #include "console.hpp"
-#include "ludata.h"
 #include "taskscheduler.hpp"
 #include "userdata.hpp"
 
-#include "classes/roblox/instance.hpp"
+#include "engine/classes/instance.hpp"
 
 #include <cassert>
 #include <cstdio>
