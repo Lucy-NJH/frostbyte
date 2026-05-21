@@ -110,7 +110,11 @@ static int fr_getallthreads(lua_State* L) {
     return 1;
 }
 
+// FIXME: this function is broken since I adjusted the bindlist to be a table of tables
 static int fr_getrendersteppedlist(lua_State* L) {
+    if (lua_gettop(L))
+        luaL_error(L, "too many arguments to getrendersteppedlist! expected 0");
+
     lua_rawgetfield(L, LUA_REGISTRYINDEX, BINDLIST_KEY);
     luaL_checktype(L, 1, LUA_TTABLE);
 
@@ -228,10 +232,11 @@ int fr_getrawmetatable(lua_State* L) {
 }
 
 int fr_setrawmetatable(lua_State* L) {
+    if (lua_gettop(L) > 2)
+        luaL_error(L, "too many arguments to setrawmetatable! expected 2");
+
     luaL_checkany(L, 1);
     luaL_argexpected(L, lua_isnil(L, 2) || lua_istable(L, 2), 2, "nil or table");
-    if (lua_gettop(L) > 2)
-        luaL_error(L, "too many arguments to fr_setrawmetatable! expected 2");
 
     lua_setmetatable(L, 1);
     return 0;
@@ -312,6 +317,14 @@ static int fr_getgenv(lua_State* L) {
 static int fr_getrenv(lua_State* L) {
     // TODO: getrenv; should essentially be shared but with all environment values (__index = environment maybe); should be one specific table we keep in registry or something
     lua_newtable(L);
+    return 1;
+}
+static int fr_gettenv(lua_State* L) {
+    luaL_checktype(L, 1, LUA_TTHREAD);
+    lua_State* thread = lua_tothread(L, 1);
+
+    lua_pushvalue(thread, LUA_GLOBALSINDEX);
+    lua_xmove(thread, L, 1);
     return 1;
 }
 
@@ -423,6 +436,7 @@ void open_frostbyte_environment(lua_State *L) {
 
     env_expose(getgenv)
     env_expose(getrenv)
+    env_expose(gettenv)
 
     env_expose(printidentity)
     env_expose(getthreadidentity)

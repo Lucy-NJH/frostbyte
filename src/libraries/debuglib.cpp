@@ -448,12 +448,12 @@ int fr_debug_getupvalues(lua_State* L) {
     return 1;
 }
 int fr_debug_setupvalue(lua_State* L) {
-    Closure* closure = getClosure(L, 1);
-    checkLClosure(L, 1, closure); // TODO: toggle allowing C closures
-
     // setupvalue expects value to be at top
     if (lua_gettop(L) > 3)
-        luaL_error(L, "too many arguments to %s", currfuncname(L));
+        luaL_error(L, "too many arguments to setupvalue! expected 3");
+
+    Closure* closure = getClosure(L, 1);
+    checkLClosure(L, 1, closure); // TODO: toggle allowing C closures
 
     int index = luaL_checknumberrange(L, 2, 1, closure->nupvalues, "index");
 

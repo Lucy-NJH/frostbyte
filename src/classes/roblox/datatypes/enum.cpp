@@ -89,10 +89,10 @@ static int Enum__tostring(lua_State* L) {
 
 namespace Enum_methods {
     static int getEnumItems(lua_State* L) {
-        Enum* _enum = lua_checkenum(L, 1);
-
         if (lua_gettop(L) > 1)
             luaL_error(L, "too many arguments to GetEnumItems! expected 1");
+
+        Enum* _enum = lua_checkenum(L, 1);
 
         lua_createtable(L, _enum->item_map.size(), 0);
 

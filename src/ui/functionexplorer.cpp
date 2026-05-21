@@ -34,9 +34,11 @@ void UI_FunctionExplorer_setSelectedFunction(lua_State* L, Closure* cl) {
 
 namespace UI_FunctionExplorer_methods {
     static int selectFunction(lua_State* L) {
+        if (lua_gettop(L) > 2)
+            luaL_error(L, "too many arguments to SelectFunction! expected 2 (including self)");
+
         std::shared_ptr<rbxInstance> instance = lua_checkinstance(L, 1, "FunctionExplorer");
         luaL_checktype(L, 2, LUA_TFUNCTION);
-        luaL_argcheck(L, lua_gettop(L) == 2, 3, "too many arguments");
 
         lua_rawsetfield(L, LUA_REGISTRYINDEX, SELECTED_FUNCTION_KEY);
 
