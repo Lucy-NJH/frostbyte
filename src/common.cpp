@@ -52,9 +52,6 @@ double getSeconds(lua_State* L, int arg) {
     return seconds;
 }
 
-std::map<size_t, Destructor> sharedptr_destructor_list;
-std::map<void*, size_t> object_destructor_map;
-
 void initializeSharedPtrDestructorList(lua_State* L) {
     #define addConstructor(Class, tagname) {                                         \
         lua_setuserdatadtor(L, userdata::tagname, [](lua_State* L, void* ud) {       \

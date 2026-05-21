@@ -4,9 +4,13 @@
 
 #include "common.hpp"
 #include "console.hpp"
+#include "taskscheduler.hpp"
+#include "ui/ui.hpp"
+
+#include "lapi.h"
+#include "ltable.h"
 #include "lua.h"
 #include "lualib.h"
-#include "ui/ui.hpp"
 
 namespace frostbyte {
 
@@ -37,6 +41,14 @@ namespace rbxInstance_RunService_methods {
 
         lua_rawgetfield(L, LUA_REGISTRYINDEX, BINDLIST_KEY);
 
+        lua_rawgetfield(L, -1, name);
+        if (lua_isnil(L, -1)) {
+            lua_pop(L, 1);
+            lua_createtable(L, 0, 1);
+            lua_pushvalue(L, -1);
+            lua_rawsetfield(L, -3, name);
+        }
+
         lua_createtable(L, 2, 0);
 
         lua_pushvalue(L, 3);
@@ -45,8 +57,8 @@ namespace rbxInstance_RunService_methods {
         lua_pushvalue(L, 4);
         lua_rawseti(L, -2, 2);
 
-        // FIXME: determine duplicate name behavior
-        lua_rawsetfield(L, -2, name);
+        lua_rawseti(L, -2, lua_objlen(L, -2) + 1);
+        lua_remove(L, -2);
         pushFunctionFromLookup(L, compare);
 
         lua_call(L, 2, 0);
@@ -76,13 +88,16 @@ namespace rbxInstance_RunService_methods {
         lua_rawgetfield(L, LUA_REGISTRYINDEX, BINDLIST_KEY);
         lua_rawgetfield(L, -1, name);
 
-        if (lua_isnil(L, -1))
-            lua_pop(L, 2);
-        else {
-            lua_pop(L, 1);
-            lua_pushnil(L);
-            lua_rawsetfield(L, -2, name);
-            lua_pop(L, 1);
+        if (!lua_isnil(L, -1)) {
+            const TValue* obj = luaA_toobject(L, -1);
+            LUAU_ASSERT(obj->tt == LUA_TTABLE);
+
+            LuaTable* tt = hvalue(obj);
+            int count = luaH_getn(tt);
+            luaH_clear(tt);
+
+            if (count > 1)
+                getTask(L)->console->warningf("RunService:UnbindFromRenderStep removed different functions with same reference name %s %d times.", name, count);
         }
 
         return 0;
@@ -109,17 +124,18 @@ void RunService::process(lua_State *L) {
 
     lua_pushnil(L);
     while (lua_next(L, -2)) {
-        lua_rawgeti(L, -1, 2);
-        lua_pushnumber(L, delta);
-        switch (lua_pcall(L, 1, 0, 0)) {
-            case LUA_OK:
-                break;
-            case LUA_ERRRUN:
-            case LUA_ERRMEM:
-            case LUA_ERRERR:
-                Console::ScriptConsole.errorf("RunService:fireRenderStepEarlyFunctions unexpected error while invoking callback: %s", lua_tostring(L, -1));
-                lua_pop(L, 1);
-                break;
+        lua_pushnil(L);
+        while (lua_next(L, -2)) {
+            lua_rawgeti(L, -1, 2);
+            lua_pushnumber(L, delta);
+
+            // NOTE: in Roblox, if you task.wait unside the callback, there will be a normal error message.
+            // this is like if we were to throw exception in startFunctionOnNewThread and handle error there but then not provide a feedback function
+            TaskScheduler::startFunctionOnNewThread(L, [] (std::string error) {
+                Console::ScriptConsole.errorf("RunService:fireRenderStepEarlyFunctions unexpected error while invoking callback: %.*s", (int) error.size(), error.data());
+            }, 1);
+
+            lua_pop(L, 1);
         }
 
         lua_pop(L, 1);
@@ -134,7 +150,6 @@ void RunService::process(lua_State *L) {
 
 void rbxInstance_RunService_init(lua_State* L) {
     lua_newtable(L);
-
     lua_rawsetfield(L, LUA_REGISTRYINDEX, BINDLIST_KEY);
 
     rbxClass::class_map["RunService"]->methods["BindToRenderStep"].func = rbxInstance_RunService_methods::bindToRenderStep;

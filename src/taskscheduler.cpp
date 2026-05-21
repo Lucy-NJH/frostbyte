@@ -253,16 +253,16 @@ void tryResumeThreadRaw(lua_State* thread) {
     }
 }
 
-void TaskScheduler::startFunctionOnNewThread(lua_State* L, Feedback feedback, Console* console) {
-    luaL_checktype(L, lua_gettop(L), LUA_TFUNCTION);
+void TaskScheduler::startFunctionOnNewThread(lua_State* L, Feedback feedback, int arg_count, Console* console) {
+    luaL_checktype(L, lua_gettop(L) - arg_count, LUA_TFUNCTION);
 
     lua_State* thread = newThread(L, feedback);
     lua_pop(L, 1);
     Task* task = getTask(thread);
     if (console) task->console = console;
 
-    task->arg_count = 0;
-    lua_xmove(L, thread, 1);
+    task->arg_count = arg_count;
+    lua_xmove(L, thread, arg_count + 1);
 
     tryResumeThreadRaw(thread);
 }

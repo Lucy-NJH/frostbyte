@@ -35,11 +35,6 @@ int countDecimals(double value);
 
 double getSeconds(lua_State* L, int arg = 1);
 
-#define SHAREDPTR_TAG_COUNT 2
-using Destructor = std::function<void(void*)>;
-
-extern std::map<size_t, Destructor> sharedptr_destructor_list;
-
 void initializeSharedPtrDestructorList(lua_State* L);
 
 using Feedback = std::function<void(std::string)>;
@@ -65,7 +60,7 @@ int addToLookup(lua_State *L, std::function<void()> pushValue, bool keep_value =
 
 template<class T>
 void pushNewSharedPtrObject(lua_State* L, std::shared_ptr<T>& ptr, int ttag) {
-    void* object = static_cast<void*>(lua_newuserdatatagged(L, sizeof(std::shared_ptr<T>), ttag));
+    void* object = lua_newuserdatatagged(L, sizeof(std::shared_ptr<T>), ttag);
     new(object) std::shared_ptr<T>(ptr);
 }
 

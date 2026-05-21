@@ -737,7 +737,7 @@ int main(int argc, char** argv) {
             ImGui::End();
         }
         if (menu_drawentry_list_open) {
-            if (ImGui::Begin("DrawEntry List", &menu_drawentry_list_open))
+            if (ImGui::Begin("DrawEntry List", &menu_drawentry_list_open, ImGuiWindowFlags_MenuBar))
                 UI_DrawEntryList_render(appL);
             ImGui::End();
         }

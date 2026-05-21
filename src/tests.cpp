@@ -179,7 +179,7 @@ namespace frostbyte {
             if (std::holds_alternative<lua_CFunction>(test.value)) {
                 lua_pushcfunction(L, std::get<lua_CFunction>(test.value), test.name);
 
-                TaskScheduler::startFunctionOnNewThread(L, test_feedbacks[i], &Console::TestsConsole);
+                TaskScheduler::startFunctionOnNewThread(L, test_feedbacks[i], 0, &Console::TestsConsole);
                 onFinish();
             } else {
                 std::string& code = std::get<std::string>(test.value);

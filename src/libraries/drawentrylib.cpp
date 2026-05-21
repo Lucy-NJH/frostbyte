@@ -135,7 +135,6 @@ void DrawEntry::destroy(lua_State* L, bool dont_erase) {
     if (!alive)
         return;
 
-    // TODO alive index and newindex behavior
     alive = false;
 
     if (!dont_erase) {
@@ -347,7 +346,7 @@ namespace DrawEntry_methods {
         DrawEntry* obj = lua_checkdrawentry(L, 1);
 
         if (!obj->alive)
-            luaL_error(L, "INTERNAL TODO: determine remove behavior when DrawEntry is already removed");
+            return 0;
 
         obj->destroy(L);
         return 0;
@@ -356,7 +355,7 @@ namespace DrawEntry_methods {
         DrawEntry* obj = lua_checkdrawentry(L, 1);
 
         if (!obj->alive)
-            luaL_error(L, "INTERNAL TODO: determine clone behavior when DrawEntry is already removed");
+            return 0;
 
         obj->clone(L);
         return 1;
@@ -388,6 +387,9 @@ int DrawEntry__index(lua_State* L) {
         lua_pushboolean(L, entry->alive);
         return 1;
     }
+
+    if (!entry->alive)
+        return 0;
 
     {
     std::lock_guard lock(entry->members_mutex);
@@ -549,6 +551,9 @@ int DrawEntry__index(lua_State* L) {
 int DrawEntry__newindex(lua_State* L) {
     DrawEntry* entry = lua_checkdrawentry(L, 1);
     const char* key = luaL_checkstring(L, 2);
+
+    if (!entry->alive)
+        return 0;
 
     // god i hate skids
     if (strequal(key, "__OBJECT_EXISTS")) {

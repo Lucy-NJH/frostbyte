@@ -40,6 +40,7 @@ public:
 
     void onZIndexUpdate();
     void free();
+    // NOTE: dont_erase should only be true if you are going to immediately remove the entry from the draw_list manually
     void destroy(lua_State* L, bool dont_erase = false);
     DrawEntry* clone(lua_State* L);
 

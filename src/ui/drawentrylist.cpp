@@ -11,7 +11,19 @@ namespace frostbyte {
 
 DrawEntry* drawentry_list_chosen = nullptr;
 
+// options
+static bool show_text_near_name = true;
+
 void UI_DrawEntryList_render(lua_State *L) {
+    if (ImGui::BeginMenuBar()) {
+        if (ImGui::BeginMenu("Options")) {
+            ImGui::MenuItem("Show Text Near Name", nullptr, &show_text_near_name);
+
+            ImGui::EndMenu();
+        }
+        ImGui::EndMenuBar();
+    }
+
     // "Create" button
     {
         static int item = 0;
@@ -45,7 +57,7 @@ void UI_DrawEntryList_render(lua_State *L) {
         #define NAME_BUF_SIZE 40
 
         char buf[NAME_BUF_SIZE];
-        if (entry->type == DrawEntry::DrawTypeText) {
+        if (show_text_near_name && entry->type == DrawEntry::DrawTypeText) {
             std::string& text = static_cast<DrawEntryText*>(entry)->text;
             if (text.size() > NAME_BUF_SIZE - 20)
                 snprintf(buf, NAME_BUF_SIZE, "entry: %s (\"%.*s\"...)", entry->class_name, NAME_BUF_SIZE - 23, text.c_str());
