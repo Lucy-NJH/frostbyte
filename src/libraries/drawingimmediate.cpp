@@ -102,10 +102,6 @@ namespace drawingimmediate_methods {
         color.a = opacity * 255.f;
 
         Rectangle rect { .x = top_left->x, .y = top_left->y, .width = size->x, .height = size->y };
-        rect.x = top_left->x;
-        rect.y = top_left->y;
-        rect.width = top_left->x;
-        rect.height = top_left->y;
 
         drawingDrawRectangle(&rect, &color, rounding, thickness, filled);
     }
@@ -225,11 +221,17 @@ void open_drawingimmediate(lua_State* L) {
     lua_setglobal(L, "DrawingImmediate");
 }
 
+double last_drawtime = lua_clock();
 void render_drawingimmediate(lua_State* L) {
+    const double drawtime = lua_clock();
+    const double delta = drawtime - last_drawtime;
+    last_drawtime = drawtime;
+
     for (const auto& event : paint_event_set) {
         pushFunctionFromLookup(L, fireRBXScriptSignal);
         lua_rawgeti(L, LUA_REGISTRYINDEX, event.ref);
-        lua_call(L, 1, 0);
+        lua_pushnumber(L, delta);
+        lua_call(L, 2, 0);
     }
 }
 

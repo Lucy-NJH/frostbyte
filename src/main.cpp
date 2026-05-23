@@ -574,6 +574,18 @@ int main(int argc, char** argv) {
                             ImGui::SameLine();
                             if (ImGui::Button("Clear"))
                                 tab.code.clear();
+
+                            ImGui::SameLine();
+                            ImGui::Text("%s", "");
+                            ImGui::SameLine();
+                            if (ImGui::Button("Execute Clipboard")) {
+                                const char* text = GetClipboardText();
+                                if (text)
+                                    tryRunCode(userL, tab.name.c_str(), text, strlen(text));
+                                else
+                                    Console::ScriptConsole.warning("Failed to get clipboard contents");
+                            }
+
                             ImGui::EndTabItem();
                         }
                     }
