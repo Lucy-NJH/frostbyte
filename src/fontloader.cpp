@@ -72,6 +72,8 @@ void FontLoader::load() {
 
         engine_font_map[name] = font;
         font_list.push_back(font);
+        font_name_list.push_back(name);
+        font_count++;
     }
 }
 void FontLoader::unload() {

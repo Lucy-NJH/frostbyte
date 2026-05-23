@@ -521,7 +521,7 @@ int pushMethod(lua_State* L, std::shared_ptr<rbxInstance>& instance, std::string
     if (method.func)
         return pushFunctionFromLookup(L, method.func, method.name.c_str(), method.cont);
     else
-        luaL_error(L, "INTERNAL ERROR: TODO implement '%s'", method.name.c_str());
+        luaL_error(L, "INTERNAL ERROR: TODO implement '%s' on class %s", method.name.c_str(), method._class->name.c_str());
 
     return 0;
 }
@@ -885,11 +885,13 @@ int rbxInstance__namecall(lua_State* L) {
         luaL_error(L, "%s is not a valid member of %s \"%s\"", namecall, class_name.c_str(), name.c_str());
     }
 
-    lua_CFunction func = instance->methods[method_name].func;
+    rbxMethod& method = instance->methods[method_name];
+
+    lua_CFunction func = method.func;
     if (func)
-        return instance->methods[method_name].func(L);
+        return func(L);
     else
-        luaL_error(L, "INTERNAL ERROR: TODO implement '%s'", method_name.c_str());
+        luaL_error(L, "INTERNAL ERROR: TODO implement '%s' on class %s", method.name.c_str(), method._class->name.c_str());
 }
 
 std::shared_ptr<rbxInstance> newInstance(lua_State* L, const char* class_name, std::shared_ptr<rbxInstance> parent) {
@@ -1285,6 +1287,7 @@ void rbxInstanceSetup(lua_State* L, std::string api_dump) {
             } else if (member_type == "Function") {
                 rbxMethod method;
                 method.name = member_name;
+                method._class = _class;
 
                 if (tags.type() == json::value_t::array) {
                     for (auto& tag_json : tags) {

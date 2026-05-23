@@ -47,7 +47,10 @@ enum Type_PrimitiveType {
     Nil,
 };
 
+class rbxClass;
+
 struct rbxMethod {
+    std::shared_ptr<rbxClass> _class;
     std::string name;
     std::optional<std::string> route = std::nullopt;
     lua_CFunction func = nullptr;

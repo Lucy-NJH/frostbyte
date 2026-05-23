@@ -20,6 +20,7 @@ bool enable_user_input_service = true;
 bool enable_run_service = true;
 bool enable_tween_service = true;
 bool menu_image_explorer_open = false;
+bool menu_font_explorer_open = false;
 bool menu_table_explorer_open = false;
 
 int imgui_inputTextCallback(ImGuiInputTextCallbackData* data) {

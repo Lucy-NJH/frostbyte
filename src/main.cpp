@@ -41,6 +41,7 @@
 #include "ui/instanceexplorer.hpp"
 #include "ui/functionexplorer.hpp"
 #include "ui/imageexplorer.hpp"
+#include "ui/fontexplorer.hpp"
 #include "ui/tableexplorer.hpp"
 
 #include "curl/curl.h"
@@ -457,6 +458,7 @@ int main(int argc, char** argv) {
                 ImGui::MenuItem("Function Explorer", nullptr, &menu_function_explorer_open);
                 ImGui::MenuItem("Table Explorer", nullptr, &menu_table_explorer_open);
                 ImGui::MenuItem("Image Explorer", nullptr, &menu_image_explorer_open);
+                ImGui::MenuItem("Font Explorer", nullptr, &menu_font_explorer_open);
 
                 ImGui::EndMenu();
             }
@@ -761,6 +763,11 @@ int main(int argc, char** argv) {
         if (menu_image_explorer_open) {
             if (ImGui::Begin("Image Explorer", &menu_image_explorer_open))
                 UI_ImageExplorer_render(appL);
+            ImGui::End();
+        }
+        if (menu_font_explorer_open) {
+            if (ImGui::Begin("Font Explorer", &menu_font_explorer_open))
+                UI_FontExplorer_render(appL);
             ImGui::End();
         }
 

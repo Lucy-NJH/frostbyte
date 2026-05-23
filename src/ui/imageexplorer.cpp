@@ -6,8 +6,6 @@
 #include <GL/gl.h>
 #include "raylib.h"
 
-#include "lua.h"
-
 namespace frostbyte {
 
 Image* chosen_image = nullptr;
