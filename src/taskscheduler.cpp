@@ -116,6 +116,8 @@ lua_State* TaskScheduler::mainL = nullptr;
 std::vector<lua_State*> TaskScheduler::thread_list;
 std::shared_mutex TaskScheduler::thread_list_mutex;
 
+std::vector<std::tuple<Workload, lua_State*, void*>> TaskScheduler::workload_list;
+
 std::vector<lua_State*> TaskScheduler::thread_queue;
 std::shared_mutex TaskScheduler::thread_queue_mutex;
 
@@ -304,7 +306,7 @@ int TaskScheduler::yieldThread(lua_State* thread) {
     return lua_yield(thread, 0);
 }
 
-int TaskScheduler::yieldForWork(lua_State* thread, Workload work) {
+int TaskScheduler::yieldForWorkThreaded(lua_State* thread, WorkloadThreaded work) {
     Task* task = getTask(thread);
     assert(task);
 
@@ -324,6 +326,13 @@ int TaskScheduler::yieldForWork(lua_State* thread, Workload work) {
     });
 
     t.detach();
+
+    return r;
+}
+int TaskScheduler::yieldForWork(lua_State* thread, Workload work, void* userdata) {
+    int r = yieldThread(thread);
+
+    workload_list.emplace_back(work, thread, userdata);
 
     return r;
 }

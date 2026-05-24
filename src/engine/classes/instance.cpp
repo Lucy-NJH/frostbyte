@@ -64,7 +64,7 @@ std::shared_ptr<rbxProperty> rbxClass::newInternalProperty(const char* name, Typ
 }
 
 std::vector<std::weak_ptr<rbxInstance>> rbxInstance::instance_list;
-std::shared_mutex rbxInstance::instance_list_mutex;
+// std::shared_mutex rbxInstance::instance_list_mutex;
 
 rbxInstance::rbxInstance(std::shared_ptr<rbxClass> _class) : _class(_class) {}
 
@@ -147,7 +147,7 @@ void reportChanged(lua_State* L, std::shared_ptr<rbxInstance> instance, const ch
 }
 
 void clearAllInstanceChildren(lua_State* L, std::shared_ptr<rbxInstance> instance) {
-    std::lock_guard children_lock(instance->children_mutex);
+    // std::lock_guard children_lock(instance->children_mutex);
     auto& children = instance->children;
 
     for (size_t i = 0; i < children.size(); i++)
@@ -156,7 +156,7 @@ void clearAllInstanceChildren(lua_State* L, std::shared_ptr<rbxInstance> instanc
     children.clear();
 }
 void destroyInstance(lua_State* L, std::shared_ptr<rbxInstance> instance, bool dont_remove_from_old_parent_children) {
-    std::lock_guard destroyed_lock(instance->destroyed_mutex);
+    // std::lock_guard destroyed_lock(instance->destroyed_mutex);
     if (instance->destroyed)
         return;
 
@@ -178,7 +178,7 @@ void destroyInstance(lua_State* L, std::shared_ptr<rbxInstance> instance, bool d
     }
 
     setInstanceParent(L, instance, nullptr, dont_remove_from_old_parent_children);
-    std::lock_guard parent_locked_lock(instance->parent_locked_mutex);
+    // std::lock_guard parent_locked_lock(instance->parent_locked_mutex);
 
     instance->destroyed = true;
     instance->parent_locked = true;
@@ -190,7 +190,7 @@ void destroyInstance(lua_State* L, std::shared_ptr<rbxInstance> instance, bool d
     lua_pop(L, 1);
 }
 std::shared_ptr<rbxInstance> rbxInstance::findFirstChild(std::string name) {
-    std::lock_guard children_lock(children_mutex);
+    // std::lock_guard children_lock(children_mutex);
 
     for (size_t i = 0; i < children.size(); i++)
         if (getInstanceValue<std::string>(children[i], PROP_INSTANCE_NAME) == name)
@@ -199,7 +199,7 @@ std::shared_ptr<rbxInstance> rbxInstance::findFirstChild(std::string name) {
 }
 
 void addInstanceToDescendantsList(std::vector<std::shared_ptr<rbxInstance>>& descendants, std::shared_ptr<rbxInstance> instance, bool skip_instance = false) {
-    std::lock_guard children_lock(instance->children_mutex);
+    // std::lock_guard children_lock(instance->children_mutex);
 
     descendants.reserve(descendants.capacity() + !skip_instance + instance->children.size());
     if (!skip_instance)
@@ -210,7 +210,7 @@ void addInstanceToDescendantsList(std::vector<std::shared_ptr<rbxInstance>>& des
 }
 
 std::vector<std::shared_ptr<rbxInstance>>getDescendants(std::shared_ptr<rbxInstance> instance) {
-    std::lock_guard children_lock(instance->children_mutex);
+    // std::lock_guard children_lock(instance->children_mutex);
 
     std::vector<std::shared_ptr<rbxInstance>> descendants;
     addInstanceToDescendantsList(descendants, instance, true);
@@ -236,7 +236,7 @@ bool isDescendantOf(std::shared_ptr<rbxInstance> instance, std::shared_ptr<rbxIn
 }
 
 rbxValueVariant& getInstanceValueVariant(std::shared_ptr<rbxInstance> instance, const char* name) {
-    std::lock_guard lock(instance->values_mutex);
+    // std::lock_guard lock(instance->values_mutex);
     return instance->values.at(name).value;
 }
 
@@ -397,7 +397,7 @@ namespace rbxInstance_methods {
     static int getChildren(lua_State* L) {
         auto instance = lua_checkinstance(L, 1);
 
-        std::lock_guard children_lock(instance->children_mutex);
+        // std::lock_guard children_lock(instance->children_mutex);
         auto& children = instance->children;
 
         lua_createtable(L, children.size(), 0);
@@ -475,6 +475,19 @@ namespace rbxInstance_methods {
         return 1;
     }
 
+    static int remove(lua_State* L) {
+        auto instance = lua_checkinstance(L, 1);
+
+        auto descendants = getDescendants(instance);
+
+        setInstanceParent(L, instance, nullptr);
+
+        for (size_t i = 0; i < descendants.size(); i++)
+            setInstanceParent(L, instance, nullptr);
+
+        return 0;
+    }
+
     static int waitForChild(lua_State* L) {
         auto instance = lua_checkinstance(L, 1);
         std::string name = luaL_checkstring(L, 2);
@@ -486,21 +499,39 @@ namespace rbxInstance_methods {
             return 1;
         }
 
-        return TaskScheduler::yieldForWork(L, [instance, name, timeout] (lua_State* thread) {
-            auto start = std::chrono::system_clock::now();
+        typedef struct {
+            std::chrono::time_point<std::chrono::system_clock> start;
+            std::shared_ptr<rbxInstance> instance;
+            std::shared_ptr<rbxInstance> child;
+            std::string name;
+            double timeout;
+        } Userdata;
+        Userdata* ud = static_cast<Userdata*>(malloc(sizeof(Userdata)));
+        new(ud) Userdata;
+        ud->start = std::chrono::system_clock::now();
+        ud->instance = instance;
+        ud->timeout = timeout;
+        ud->name = name;
 
-            auto child = instance->findFirstChild(name);
-            while (!child) {
-                if (std::chrono::duration<double>(std::chrono::system_clock::now() - start).count() >= timeout) {
-                    getTask(thread)->console->warningf("TODO this message lol; infinite yield possible while waiting for child \"%.*s\"", static_cast<int>(name.size()), name.c_str());
-                    return 0;
-                }
-                child = instance->findFirstChild(name);
+        return TaskScheduler::yieldForWork(L, [] (lua_State* thread, void* ud) {
+            Userdata* userdata = static_cast<Userdata*>(ud);
+            if (userdata->child) {
+                userdata->~Userdata();
+                lua_pushinstance(thread, userdata->child);
+                return 1;
             }
 
-            lua_pushinstance(thread, child);
-            return 1;
-        });
+            if (std::chrono::duration<double>(std::chrono::system_clock::now() - userdata->start).count() >= userdata->timeout) {
+                userdata->~Userdata();
+                getTask(thread)->console->warningf("TODO this message lol; infinite yield possible while waiting for child \"%.*s\"", static_cast<int>(userdata->name.size()), userdata->name.c_str());
+                luaL_error(thread, "[stub message to kill thread]");
+                return 0;
+            }
+
+            userdata->child = userdata->instance->findFirstChild(userdata->name);
+
+            return -2;
+        }, ud);
     }
 }; // namespace rbxInstance_methods
 
@@ -560,7 +591,7 @@ int rbxInstance__index(lua_State* L) {
     if (property->tags & rbxProperty::WriteOnly)
         luaL_error(L, "'%s' is a write-only member of %s", key, class_name.c_str());
 
-    std::lock_guard values_lock(instance->values_mutex);
+    // std::lock_guard values_lock(instance->values_mutex);
 
     if (std::holds_alternative<std::monostate>(value->value))
         lua_pushnil(L);
@@ -650,7 +681,7 @@ const char* getOptionalInstanceName(std::shared_ptr<rbxInstance> instance) {
 void setInstanceParent(lua_State* L, std::shared_ptr<rbxInstance> instance, std::shared_ptr<rbxInstance> new_parent, bool dont_remove_from_old_parent_children, bool dont_set_value) {
     std::shared_ptr<rbxInstance> old_parent = getInstanceValue<std::shared_ptr<rbxInstance>>(instance, PROP_INSTANCE_PARENT);
 
-    std::shared_lock parent_locked_lock(instance->parent_locked_mutex);
+    // std::shared_lock parent_locked_lock(instance->parent_locked_mutex);
     if (instance->parent_locked)
         luaL_error(L, "The Parent property of %s is locked, current parent: %s, new parent %s", getOptionalInstanceName(instance), getOptionalInstanceName(old_parent), getOptionalInstanceName(new_parent));
 
@@ -658,13 +689,13 @@ void setInstanceParent(lua_State* L, std::shared_ptr<rbxInstance> instance, std:
         luaL_error(L, "Attempt to set %s as its own parent", getOptionalInstanceName(instance));
 
     if (old_parent && !dont_remove_from_old_parent_children) {
-        std::lock_guard old_parent_children_lock(old_parent->children_mutex);
+        // std::lock_guard old_parent_children_lock(old_parent->children_mutex);
 
         old_parent->children.erase(std::find(old_parent->children.begin(), old_parent->children.end(), instance));
     }
 
     if (new_parent) {
-        std::lock_guard parent_children_lock(new_parent->children_mutex);
+        // std::lock_guard parent_children_lock(new_parent->children_mutex);
 
         new_parent->children.push_back(instance);
     }
@@ -674,7 +705,7 @@ void setInstanceParent(lua_State* L, std::shared_ptr<rbxInstance> instance, std:
 }
 
 static int fr_getinstances(lua_State* L) {
-    std::lock_guard lock(rbxInstance::instance_list_mutex);
+    // std::lock_guard lock(rbxInstance::instance_list_mutex);
 
     newweaktable(L);
 
@@ -689,7 +720,7 @@ static int fr_getinstances(lua_State* L) {
     return 1;
 }
 std::vector<std::weak_ptr<rbxInstance>> getNilInstances() {
-    std::lock_guard lock(rbxInstance::instance_list_mutex);
+    // std::lock_guard lock(rbxInstance::instance_list_mutex);
 
     std::vector<std::weak_ptr<rbxInstance>> nil_instances;
 
@@ -777,6 +808,7 @@ int rbxInstance__newindex(lua_State* L) {
                     getTask(L)->console->warningf("value of type %s cannot be converted to a number", luaL_typename(L, 3));
                 setInstanceValue(instance, L, key, new_value);
             } else if (std::holds_alternative<std::string>(value->value)) {
+                STRING_CASE:
                 size_t l;
                 const char* str = luaL_tolstring(L, 3, &l);
                 if (str == NULL)
@@ -811,7 +843,9 @@ int rbxInstance__newindex(lua_State* L) {
             // TODO: (for all of these types) use to* not check* and error "Unable to assign property %skey. %stype expected, got %stypename3"
                 const auto new_value = lua_checkcolor(L, 3);
                 setInstanceValue(instance, L, key, *new_value);
-            } else if (std::holds_alternative<EnumItem*>(value->value)) {
+            } else if (value->property->type_name == "ContentId")
+                goto STRING_CASE;
+            else if (std::holds_alternative<EnumItem*>(value->value)) {
                 const char* expected_enum = std::get<EnumItem*>(value->value)->enum_name.c_str();
                 const auto new_value = lua_checkenumitem(L, 3, expected_enum);
                 setInstanceValue(instance, L, key, new_value);
@@ -851,8 +885,16 @@ int rbxInstance__newindex(lua_State* L) {
             } else if (std::holds_alternative<Vector3>(value->value)) {
                 const auto new_value = lua_checkvector3(L, 3);
                 setInstanceValue(instance, L, key, *new_value);
-            } else
+            } else {
+                lua_getglobal(L, "debug");
+                lua_rawgetfield(L, -1, "traceback");
+                lua_remove(L, -2);
+                lua_call(L, 0, 1);
+                const char* stacktrace = lua_tostring(L, -1);
+                lua_pop(L, 1);
+                printf("unhandled alternative for datatype value.. %s\n", stacktrace);
                 assert(!"UNHANDLED ALTERNATIVE FOR DATATYPE VALUE");
+            }
 
             break;
         case Instance: {
@@ -934,7 +976,7 @@ std::shared_ptr<rbxInstance> newInstance(lua_State* L, const char* class_name, s
     setInstanceValue<std::string>(instance, L, PROP_INSTANCE_CLASS_NAME, class_name, true);
     setInstanceParent(L, instance, parent);
 
-    std::lock_guard instance_list_lock(rbxInstance::instance_list_mutex);
+    // std::lock_guard instance_list_lock(rbxInstance::instance_list_mutex);
     rbxInstance::instance_list.push_back(instance);
 
     return instance;
@@ -957,7 +999,7 @@ std::shared_ptr<rbxInstance> cloneInstance(lua_State* L, std::shared_ptr<rbxInst
         // Unlocking then locking again leaves time in the middle for actions to be performed from other threads.
         // ^ not specific to this function; happens in other places too
 
-        std::shared_lock children_lock(reference->children_mutex);
+        // std::shared_lock children_lock(reference->children_mutex);
         auto& children = reference->children;
 
         // kinda hacky
@@ -977,12 +1019,12 @@ std::shared_ptr<rbxInstance> cloneInstance(lua_State* L, std::shared_ptr<rbxInst
             cloned_children.push_back(cloned);
         }
 
-        children_lock.unlock();
+        // children_lock.unlock();
 
         for (size_t i = 0; i < cloned_children.size(); i++)
             setInstanceParent(L, cloned_children[i], instance, true);
 
-        children_lock.lock();
+        // children_lock.lock();
 
         for (auto& pair : **cloned_map) {
             // TODO: does it help or hurt performance for this `c` to be the same as the one above?
@@ -1133,6 +1175,11 @@ void rbxInstanceSetup(lua_State* L, std::string api_dump) {
             item.value = item_value;
 
             enums.item_map[item_name] = item;
+
+            auto legacynames = item_json["LegacyNames"];
+            if (legacynames.type() == json::value_t::array)
+                for (auto& name_json : legacynames)
+                    enums.item_map[name_json.template get<std::string>()] = item;
         }
 
         Enum::enum_map[enum_name] = enums;
@@ -1232,18 +1279,23 @@ void rbxInstanceSetup(lua_State* L, std::string api_dump) {
                     if (default_exists) {
                         default_item = &Enum::enum_map.at(type).item_map.at(default_value);
                     } else {
-                        if (EnumItem* enum_item = getEnumItemFromValue(type.c_str(), 0))
-                            default_item = enum_item;
+                        // FIXME: there is something wrong with this.. InstanceExplorer revealed this to me via crashing after selecting a Part and crashing the program
+                        // if (EnumItem* enum_item = getEnumItemFromValue(type.c_str(), 0))
+                        //     default_item = enum_item;
+                        default_item = &Enum::enum_map.at(type).item_map.at(Enum::enum_map.at(type).item_map.begin()->first);
                     }
 
                     property->default_value.value = default_item;
                 } else if (category == "DataType") {
                     property->type_category = DataType;
+                    property->type_name = type;
                     property->default_value = rbxValue();
 
                     // FIXME: all datatypes
                     if (type == "Color3")
                         property->default_value.value = Color{255, 255, 255, 255};
+                    else if (type == "ContentId")
+                        property->default_value.value = "";
                     else if (type == "Font")
                         property->default_value.value = default_font;
                     else if (type == "TweenInfo")
@@ -1320,6 +1372,7 @@ void rbxInstanceSetup(lua_State* L, std::string api_dump) {
     rbxClass::class_map["Object"]->methods.at("GetPropertyChangedSignal").func = rbxInstance_methods::getPropertyChangedSignal;
     rbxClass::class_map["Object"]->methods.at("IsA").func = rbxInstance_methods::isA;
     rbxClass::class_map["Instance"]->methods.at("IsDescendantOf").func = rbxInstance_methods::isDescendantOf;
+    rbxClass::class_map["Instance"]->methods.at("Remove").func = rbxInstance_methods::remove;
     rbxClass::class_map["Instance"]->methods.at("WaitForChild").func = rbxInstance_methods::waitForChild;
 
     // metatable

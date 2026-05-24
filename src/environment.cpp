@@ -34,6 +34,12 @@ static int fr_identifyexecutor(lua_State* L) {
     return 2;
 }
 
+static int fr_Version(lua_State* L) {
+    // NOTE: this is the studio version from July 1 since we got the api dump from July 8
+    lua_pushstring(L, "0.680.0.6800701");
+    return 1;
+}
+
 int fr_getreg(lua_State* L) {
     lua_pushvalue(L, LUA_REGISTRYINDEX);
     return 1;
@@ -169,15 +175,29 @@ static int fr_wait(lua_State* L) {
     auto before = std::chrono::system_clock::now();
     auto end = std::chrono::system_clock::now() + std::chrono::duration<double>(seconds);
 
-    return TaskScheduler::yieldForWork(L, [before, end] (lua_State* thread) {
-        auto now = std::chrono::system_clock::now();
-        while (now < end)
-            now = std::chrono::system_clock::now();
+    typedef struct {
+        std::chrono::time_point<std::chrono::system_clock> before;
+        std::chrono::time_point<std::chrono::system_clock, std::chrono::duration<double>> end;
+    } Userdata;
+    Userdata* ud = static_cast<Userdata*>(malloc(sizeof(Userdata)));
+    new(ud) Userdata;
+    ud->before = before;
+    ud->end = end;
 
-        lua_pushnumber(thread, static_cast<std::chrono::duration<double>>(now - before).count());
+    return TaskScheduler::yieldForWork(L, [] (lua_State* thread, void* ud) {
+        Userdata* userdata = static_cast<Userdata*>(ud);
+
+        auto now = std::chrono::system_clock::now();
+        if (now < userdata->end)
+            return -2;
+
+        lua_pushnumber(thread, static_cast<std::chrono::duration<double>>(now - userdata->before).count());
         lua_pushnumber(thread, lua_clock() - TaskScheduler::initial_client_time);
+
+        userdata->~Userdata();
+
         return 2;
-    });
+    }, ud);
 }
 
 static int fr_gcstep(lua_State* L) {
@@ -386,6 +406,8 @@ void open_frostbyte_environment(lua_State *L) {
     lua_setglobal(L, "warn");
 
     env_expose(identifyexecutor)
+
+    env_expose(Version)
 
     env_expose(getreg)
     env_expose(getgc)

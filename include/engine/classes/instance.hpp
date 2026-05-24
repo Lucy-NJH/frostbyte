@@ -140,7 +140,7 @@ std::vector<std::weak_ptr<rbxInstance>> getNilInstances();
 class rbxInstance {
 public:
     static std::vector<std::weak_ptr<rbxInstance>> instance_list;
-    static std::shared_mutex instance_list_mutex;
+    // static std::shared_mutex instance_list_mutex;
 
     std::shared_ptr<rbxClass> _class;
     std::map<std::string, rbxValue> values;
@@ -148,15 +148,15 @@ public:
     std::vector<std::string> events;
     std::vector<std::shared_ptr<rbxInstance>> children;
 
-    std::shared_mutex values_mutex;
-    std::shared_mutex children_mutex;
+    // std::shared_mutex values_mutex;
+    // std::shared_mutex children_mutex;
 
     bool destroyed = false;
     bool parent_locked = false;
     void* userdata = nullptr;
 
-    std::shared_mutex destroyed_mutex;
-    std::shared_mutex parent_locked_mutex;
+    // std::shared_mutex destroyed_mutex;
+    // std::shared_mutex parent_locked_mutex;
 
     // static lua_State* destructorL;
 
@@ -196,6 +196,7 @@ public:
     bool internal = false;
 
     TypeCategory type_category;
+    std::string type_name;
     rbxValue default_value;
 
     std::optional<std::string> route = std::nullopt;
@@ -212,7 +213,7 @@ rbxValueVariant luaValueToValueVariant(lua_State* L, int idx, rbxValueVariant& r
 
 template<typename T>
 void setInstanceValue(std::shared_ptr<rbxInstance> instance, lua_State* L, const char* name, T value, bool dont_report_changed = false) {
-    std::unique_lock lock(instance->values_mutex);
+    // std::unique_lock lock(instance->values_mutex);
 
     auto& rbxvalue = instance->values.at(name);
     auto& variant = rbxvalue.value;
@@ -367,9 +368,9 @@ void setInstanceValue(std::shared_ptr<rbxInstance> instance, lua_State* L, const
                 goto DUPLICATE;
 
             if (strequal(name, PROP_INSTANCE_PARENT)) {
-                lock.unlock();
+                // lock.unlock();
                 setInstanceParent(L, instance, value, false, true);
-                lock.lock();
+                // lock.lock();
             }
 
             v = value;
@@ -404,7 +405,7 @@ void setInstanceValue(std::shared_ptr<rbxInstance> instance, lua_State* L, const
     goto AFTER_SET;
     AFTER_SET: ;
 
-    lock.unlock();
+    // lock.unlock();
 
     if (!rbxvalue.property->internal && !dont_report_changed)
         reportChanged(L, instance, name);

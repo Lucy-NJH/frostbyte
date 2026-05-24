@@ -121,6 +121,10 @@ void renderGuiObject(lua_State* L, std::shared_ptr<rbxInstance> instance, Vector
     // I think we need to render to individual render textures IN REVERSE ORDER?
 
     if (!is_layer_collector) {
+        // FIXME: determine if this behavior is accurate; im trying to fix other issues right now and can't be bothered to verify this
+        if (!instance->isA("GuiObject"))
+            return;
+
         clips_descendants = getInstanceValue<bool>(instance, "ClipsDescendants");
 
         const auto parent = getInstanceValue<std::shared_ptr<rbxInstance>>(instance, PROP_INSTANCE_PARENT);
@@ -256,7 +260,7 @@ void renderGuiObject(lua_State* L, std::shared_ptr<rbxInstance> instance, Vector
             // BeginScissorMode(clip_position.x, clip_position.y, clip_size.x, clip_size.y);
             ;
 
-        std::lock_guard lock(instance->children_mutex);
+        // std::lock_guard lock(instance->children_mutex);
 
         std::vector<std::shared_ptr<rbxInstance>> sorted_children;
 
@@ -271,7 +275,9 @@ void renderGuiObject(lua_State* L, std::shared_ptr<rbxInstance> instance, Vector
         // TODO: use a std::set if stable sort is still possible (see drawingimmediate)
         // TODO: LayoutOrder?
         std::stable_sort(sorted_children.begin(), sorted_children.end(), [] (std::shared_ptr<rbxInstance> a, std::shared_ptr<rbxInstance> b) {
-            return getInstanceValue<int>(a, "ZIndex") < getInstanceValue<int>(b, "ZIndex");
+            if (a->isA("GuiObject") && b->isA("GuiObject"))
+                return getInstanceValue<int>(a, "ZIndex") < getInstanceValue<int>(b, "ZIndex");
+            return false;
         });
 
         for (size_t i = 0; i < sorted_children.size(); i++)
@@ -301,7 +307,7 @@ void contributeToRenderList(std::shared_ptr<rbxInstance> instance, bool is_stora
         render_list.push_back(instance);
     }
 
-    std::lock_guard lock(instance->children_mutex);
+    // std::lock_guard lock(instance->children_mutex);
     for (size_t i = 0; i < instance->children.size(); i++)
         contributeToRenderList(instance->children[i]);
 }

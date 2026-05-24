@@ -1,6 +1,7 @@
 #pragma once
 
 #include <shared_mutex>
+#include <utility>
 #include <vector>
 
 #include "common.hpp"
@@ -69,7 +70,8 @@ struct Task {
     } view;
 };
 
-using Workload = std::function<int(lua_State*)>;
+using Workload = std::function<int(lua_State*, void*)>;
+using WorkloadThreaded = std::function<int(lua_State*)>;
 
 class TaskScheduler {
     static std::shared_mutex target_fps_mutex;
@@ -91,6 +93,8 @@ public:
 
     static std::vector<lua_State*> thread_list;
     static std::shared_mutex thread_list_mutex;
+
+    static std::vector<std::tuple<Workload, lua_State*, void*>> workload_list;
 
     static int target_fps;
     static void setTargetFps(int target);
@@ -114,7 +118,8 @@ public:
     static void startCodeOnNewThread(lua_State* L, const char* chunk_name, const char* code, size_t code_size, Feedback feedback, OnKill on_kill = nullptr, Console* console = nullptr);
 
     static int yieldThread(lua_State* thread);
-    static int yieldForWork(lua_State* thread, Workload work);
+    static int yieldForWorkThreaded(lua_State* thread, WorkloadThreaded work);
+    static int yieldForWork(lua_State* thread, Workload work, void* userdata);
 
     static void run();
 

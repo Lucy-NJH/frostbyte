@@ -500,7 +500,7 @@ void UserInputService::process(lua_State *L, bool anyImGui) {
         }
 
         if (event.type == InputEvent::MouseClick && event.state == InputEnded) {
-            std::lock_guard lock(rbxInstance::instance_list_mutex);
+            // std::lock_guard lock(rbxInstance::instance_list_mutex);
 
             for (size_t i = 0; i < rbxInstance::instance_list.size(); i++) {
                 auto instance = rbxInstance::instance_list[i].lock();

@@ -83,7 +83,7 @@ void renderInstance(lua_State* L, std::shared_ptr<rbxInstance>& instance) {
     if (!show_input_objects && instance->isA("InputObject"))
         return;
 
-    std::shared_lock instance_children_lock(instance->children_mutex);
+    // std::shared_lock instance_children_lock(instance->children_mutex);
 
     auto object_name = getInstanceValue<std::string>(instance, PROP_INSTANCE_NAME);
     if (show_address_near_name) {
@@ -125,7 +125,7 @@ void renderPropertyValue(rbxProperty* property, rbxValueVariant& value) {
 
                 int selected = -1;
                 std::vector<const char*> item_list;
-                auto& item_map = Enum::enum_map[enum_item->enum_name].item_map;
+                auto& item_map = Enum::enum_map.at(enum_item->enum_name).item_map;
 
                 const size_t count = item_map.size();
                 if (count) {
@@ -178,7 +178,7 @@ void UI_InstanceExplorer_render(lua_State *L) {
     ImGui::BeginChild("Explorer", ImVec2{0, ImGui::GetContentRegionAvail().y / 2.f}, ImGuiChildFlags_None);
 
     {
-        std::shared_lock game_children_lock(game->children_mutex);
+        // std::shared_lock game_children_lock(game->children_mutex);
 
         for (unsigned int ichild = 0; ichild < game->children.size(); ichild++)
             renderInstance(L, game->children[ichild]);
@@ -243,7 +243,7 @@ void UI_InstanceExplorer_render(lua_State *L) {
 
         ImGui::SeparatorText("Properties");
         if (ImGui::BeginTable("Properties##table", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
-            std::lock_guard values_lock(selected->values_mutex);
+            // std::lock_guard values_lock(selected->values_mutex);
 
             for (auto& value_pair : selected->values) {
                 auto& property = value_pair.second.property;

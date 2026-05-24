@@ -799,6 +799,42 @@ int main(int argc, char** argv) {
 
         TaskScheduler::run();
 
+        {
+        static std::vector<size_t> workloads_to_remove;
+        workloads_to_remove.clear();
+
+        for (size_t i = 0; i < TaskScheduler::workload_list.size(); i++) {
+            const auto& tuple = TaskScheduler::workload_list[i];
+
+            auto& workload = std::get<0>(tuple);
+            auto& thread = std::get<1>(tuple);
+            auto& userdata = std::get<2>(tuple);
+
+            int arg_count = 0;
+            try {
+                arg_count = workload(thread, userdata);
+            } catch(std::exception& e) {
+                TaskScheduler::killThread(thread);
+                getTask(thread)->feedback(e.what());
+                goto REMOVE;
+            }
+
+            if (arg_count == -2)
+                continue;
+
+            TaskScheduler::queueForResume(thread, arg_count);
+
+            REMOVE:
+            workloads_to_remove.push_back(i);
+            if (userdata)
+                free(userdata);
+        }
+
+        for (const auto& i : workloads_to_remove)
+            TaskScheduler::workload_list.erase(TaskScheduler::workload_list.begin() + i);
+
+        }
+
         RunService::heartbeat(appL);
 
         setInstanceValue<double>(Workspace::instance, appL, "DistributedGameTime", lua_clock() - initial_game_time);

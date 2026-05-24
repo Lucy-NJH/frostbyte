@@ -77,7 +77,7 @@ namespace rbxInstance_DataModel_methods {
         lua_checkinstance(L, 1, "DataModel");
         std::string url = luaL_checkstring(L, 2);
 
-        return TaskScheduler::yieldForWork(L, [url] (lua_State* thread) {
+        return TaskScheduler::yieldForWorkThreaded(L, [url] (lua_State* thread) {
             struct MemoryStruct chunk;
 
             CURLcode res = newGetRequest(url.c_str(), &chunk);
