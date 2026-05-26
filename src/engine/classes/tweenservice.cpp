@@ -14,7 +14,7 @@
 namespace frostbyte {
 
 std::vector<std::shared_ptr<rbxInstance>> TweenService::active_tween_list;
-std::shared_mutex TweenService::active_tween_list_mutex;
+// std::shared_mutex TweenService::active_tween_list_mutex;
 
 std::map<std::shared_ptr<rbxInstance>, TweenObject> tween_instance_to_object_map;
 
@@ -23,7 +23,7 @@ void TweenService::activateTween(lua_State* L, std::shared_ptr<rbxInstance> twee
     if (playback_state->name == "Delayed" || playback_state->name == "Playing")
         return;
 
-    std::lock_guard lock(TweenService::active_tween_list_mutex);
+    // std::lock_guard lock(TweenService::active_tween_list_mutex);
 
     auto& tween_info = getInstanceValue<TweenInfo>(tween_instance, "TweenInfo");
     auto& tween_object = tween_instance_to_object_map.at(tween_instance);
@@ -267,7 +267,7 @@ void TweenService::pauseTween(lua_State* L, std::shared_ptr<rbxInstance> tween_i
 // }
 
 void TweenService::process(lua_State *L) {
-    std::shared_lock lock(TweenService::active_tween_list_mutex);
+    // std::shared_lock lock(TweenService::active_tween_list_mutex);
 
     static std::vector<std::shared_ptr<rbxInstance>> completed_tween_list;
     completed_tween_list.clear();

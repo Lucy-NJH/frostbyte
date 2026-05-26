@@ -340,4 +340,48 @@ std::string sha1ToString(unsigned int *hashed) {
     return result;
 }
 
+std::string getStackTrace(lua_State* L) {
+    std::string trace;
+
+    // from ldblib.cpp
+    lua_Debug ar;
+    for (int i = 1; lua_getinfo(L, i, "sln", &ar); ++i) {
+        if (strcmp(ar.what, "C") == 0)
+            continue;
+
+        if (ar.source)
+            trace.append(ar.short_src);
+
+        if (ar.currentline > 0) {
+            char line[32]; // manual conversion for performance
+            char* lineend = line + sizeof(line);
+            char* lineptr = lineend;
+            for (unsigned int r = ar.currentline; r > 0; r /= 10)
+                *--lineptr = '0' + (r % 10);
+
+            trace.push_back(':');
+            trace.append(lineptr, lineend - lineptr);
+        }
+
+        if (ar.name) {
+            trace.append(" function ");
+            trace.append(ar.name);
+        }
+
+        trace.push_back('\n');
+    }
+
+    return trace;
+}
+std::string getErrorMessage(lua_State* L) {
+    const char* str = lua_tostring(L, -1);
+    std::string msg = str ? str : "";
+
+    if (str)
+        msg.push_back('\n');
+    msg.append(getStackTrace(L));
+
+    return msg;
+}
+
 }; // namespace frostbyte

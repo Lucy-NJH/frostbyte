@@ -45,7 +45,7 @@ void UI_DrawEntryList_render(lua_State *L) {
     bool chosen_still_exists = false;
 
     DrawEntry* entry_to_clone = nullptr;
-    std::shared_lock draw_list_lock(DrawEntry::draw_list_mutex);
+    // std::shared_lock draw_list_lock(DrawEntry::draw_list_mutex);
     for (auto& entry : DrawEntry::draw_list) {
         bool is_selected = drawentry_list_chosen && entry == drawentry_list_chosen;
 
@@ -77,9 +77,9 @@ void UI_DrawEntryList_render(lua_State *L) {
         if (ImGui::BeginPopupContextItem()) {
             ImGui::Checkbox("Visible", &entry->visible);
             if (ImGui::Button("Destroy")) {
-                draw_list_lock.unlock();
+                // draw_list_lock.unlock();
                 entry->destroy(L);
-                draw_list_lock.lock();
+                // draw_list_lock.lock();
             } else if (ImGui::Button("Clone"))
                 entry_to_clone = entry;
             ImGui::EndPopup();
@@ -87,7 +87,7 @@ void UI_DrawEntryList_render(lua_State *L) {
 
         ImGui::PopID();
     }
-    draw_list_lock.unlock();
+    // draw_list_lock.unlock();
 
     if (entry_to_clone) {
         chosen_still_exists = true;
@@ -100,7 +100,7 @@ void UI_DrawEntryList_render(lua_State *L) {
     ImGui::EndChild();
 
     if (drawentry_list_chosen) {
-        std::lock_guard members_lock(drawentry_list_chosen->members_mutex);
+        // std::lock_guard members_lock(drawentry_list_chosen->members_mutex);
 
         ImGui::SameLine();
 

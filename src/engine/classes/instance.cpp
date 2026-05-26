@@ -715,48 +715,41 @@ namespace rbxInstance_methods {
 
     static int waitForChild(lua_State* L) {
         auto instance = lua_checkinstance(L, 1);
-        const char* name = luaL_checkstring(L, 2);
+        std::string name = luaL_checkstring(L, 2);
         const double timeout = luaL_optnumber(L, 3, 5);
 
-        auto child = instance->findFirstChild(name);
+        auto child = instance->findFirstChild(name.c_str());
         if (child) {
             lua_pushinstance(L, child);
             return 1;
         }
 
-        typedef struct {
-            std::chrono::time_point<std::chrono::system_clock> start;
-            std::shared_ptr<rbxInstance> instance;
-            std::shared_ptr<rbxInstance> child;
-            std::string name;
-            double timeout;
-        } Userdata;
-        Userdata* ud = static_cast<Userdata*>(malloc(sizeof(Userdata)));
-        new(ud) Userdata;
-        ud->start = std::chrono::system_clock::now();
-        ud->instance = instance;
-        ud->timeout = timeout;
-        ud->name = name;
+        auto start = std::chrono::system_clock::now();
 
-        return TaskScheduler::yieldForWork(L, [] (lua_State* thread, void* ud) {
-            Userdata* userdata = static_cast<Userdata*>(ud);
-            if (userdata->child) {
-                userdata->~Userdata();
-                lua_pushinstance(thread, userdata->child);
+        return TaskScheduler::yieldForWork(L, [start, instance, timeout, name] (Yield yield) {
+            auto child = instance->findFirstChild(name.c_str());
+            while (!child) {
+                if (std::chrono::duration<double>(std::chrono::system_clock::now() - start).count() >= timeout) {
+                    yield.finish([instance, name] (lua_State* L) {
+                        auto instance_name = getInstanceValue<std::string>(instance, PROP_INSTANCE_NAME);
+                        getTask(L)->console->warningf("Infinite yield possible on %.*s:WaitForChild(\"%.*s\")", static_cast<int>(instance_name.size()), instance_name.c_str(), static_cast<int>(name.size()), name.c_str());
+
+                        // YIELD_ERROR works like lua_error: you can provide an optional message
+                        lua_pushnil(L);
+                        return YIELD_ERROR;
+                    });
+
+                    return;
+                }
+
+                child = instance->findFirstChild(name.c_str());
+            }
+
+            yield.finish([child] (lua_State* L) {
+                lua_pushinstance(L, child);
                 return 1;
-            }
-
-            if (std::chrono::duration<double>(std::chrono::system_clock::now() - userdata->start).count() >= userdata->timeout) {
-                userdata->~Userdata();
-                getTask(thread)->console->warningf("TODO this message lol; infinite yield possible while waiting for child \"%.*s\"", static_cast<int>(userdata->name.size()), userdata->name.c_str());
-                luaL_error(thread, "[stub message to kill thread]");
-                return 0;
-            }
-
-            userdata->child = userdata->instance->findFirstChild(userdata->name.c_str());
-
-            return -2;
-        }, ud);
+            });
+        }, true);
     }
 }; // namespace rbxInstance_methods
 

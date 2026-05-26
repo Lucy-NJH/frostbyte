@@ -100,4 +100,7 @@ void setfunctionfield(lua_State* L, lua_CFunction func, const char* funcname, bo
 
 std::string sha1ToString(unsigned int* hashed);
 
+std::string getStackTrace(lua_State* L);
+std::string getErrorMessage(lua_State* L);
+
 }; // namespace frostbyte

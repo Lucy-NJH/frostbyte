@@ -104,12 +104,11 @@ static int fr_getgc(lua_State* L) {
 }
 
 static int fr_getallthreads(lua_State* L) {
-    std::shared_lock lock(TaskScheduler::thread_list_mutex);
+    // std::shared_lock lock(TaskScheduler::thread_list_mutex);
 
     createweaktable(L, TaskScheduler::thread_list.size(), 0);
     for (size_t i = 0; i < TaskScheduler::thread_list.size();i ++) {
         lua_State* thread = TaskScheduler::thread_list[i];
-        // hack because I don't want to bring over api_incr_top
         lua_pushnil(L);
         setthvalue(L, L->top - 1, thread);
         lua_rawseti(L, -2, i + 1);
@@ -175,29 +174,17 @@ static int fr_wait(lua_State* L) {
     auto before = std::chrono::system_clock::now();
     auto end = std::chrono::system_clock::now() + std::chrono::duration<double>(seconds);
 
-    typedef struct {
-        std::chrono::time_point<std::chrono::system_clock> before;
-        std::chrono::time_point<std::chrono::system_clock, std::chrono::duration<double>> end;
-    } Userdata;
-    Userdata* ud = static_cast<Userdata*>(malloc(sizeof(Userdata)));
-    new(ud) Userdata;
-    ud->before = before;
-    ud->end = end;
-
-    return TaskScheduler::yieldForWork(L, [] (lua_State* thread, void* ud) {
-        Userdata* userdata = static_cast<Userdata*>(ud);
-
+    return TaskScheduler::yieldForWork(L, [before, end] (Yield yield) {
         auto now = std::chrono::system_clock::now();
-        if (now < userdata->end)
-            return -2;
+        while (now < end)
+            now = std::chrono::system_clock::now();
 
-        lua_pushnumber(thread, static_cast<std::chrono::duration<double>>(now - userdata->before).count());
-        lua_pushnumber(thread, lua_clock() - TaskScheduler::initial_client_time);
-
-        userdata->~Userdata();
-
-        return 2;
-    }, ud);
+        yield.finish([now, before] (lua_State* L) {
+            lua_pushnumber(L, static_cast<std::chrono::duration<double>>(now - before).count());
+            lua_pushnumber(L, lua_clock() - TaskScheduler::initial_client_time);
+            return 2;
+        });
+    }, true);
 }
 
 static int fr_gcstep(lua_State* L) {

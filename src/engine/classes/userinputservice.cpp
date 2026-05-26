@@ -299,10 +299,10 @@ struct InputEvent {
 };
 
 std::queue<InputEvent> input_event_queue;
-std::mutex input_event_mutex;
+// std::mutex input_event_mutex;
 
 void pushInputEvent(InputEvent& event) {
-    std::lock_guard<std::mutex> lock(input_event_mutex);
+    // std::lock_guard<std::mutex> lock(input_event_mutex);
 
     input_event_queue.push(event);
 }

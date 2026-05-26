@@ -1,5 +1,7 @@
 #pragma once
 
+#include <mutex>
+#include <queue>
 #include <shared_mutex>
 #include <utility>
 #include <vector>
@@ -70,16 +72,41 @@ struct Task {
     } view;
 };
 
-using Workload = std::function<int(lua_State*, void*)>;
-using WorkloadThreaded = std::function<int(lua_State*)>;
+#define YIELD_KILL (-2)
+#define YIELD_ERROR (-3)
+
+class Yield;
+
+using YieldFunction = std::function<void(Yield)>;
+using YieldFinish = std::function<int(lua_State*)>;
+class Yield {
+    std::queue<Yield>* yield_list = nullptr;
+    std::shared_mutex* yield_mutex = nullptr;
+public:
+    lua_State* state;
+    YieldFinish finisher = nullptr;
+
+    Yield(lua_State* state, std::queue<Yield>* yield_list, std::shared_mutex* yield_mutex) {
+        this->state = state;
+        this->yield_list = yield_list;
+        this->yield_mutex = yield_mutex;
+    }
+
+    void finish(YieldFinish callback) {
+        assert(!this->finisher);
+        this->finisher = callback;
+        std::lock_guard lock(*yield_mutex);
+        yield_list->push(*this);
+    }
+};
 
 class TaskScheduler {
-    static std::shared_mutex target_fps_mutex;
+    // static std::shared_mutex target_fps_mutex;
 
-    static std::shared_mutex gc_mutex;
+    // static std::shared_mutex gc_mutex;
 
     static std::vector<lua_State*> thread_queue;
-    static std::shared_mutex thread_queue_mutex;
+    // static std::shared_mutex thread_queue_mutex;
 
     static void resumeThread(lua_State* thread);
     static void killThreadUnlocked(lua_State* thread);
@@ -92,9 +119,10 @@ public:
     static lua_State* mainL;
 
     static std::vector<lua_State*> thread_list;
-    static std::shared_mutex thread_list_mutex;
+    // static std::shared_mutex thread_list_mutex;
 
-    static std::vector<std::tuple<Workload, lua_State*, void*>> workload_list;
+    static std::queue<Yield> pending_yield_list;
+    static std::shared_mutex pending_yield_mutex;
 
     static int target_fps;
     static void setTargetFps(int target);
@@ -118,8 +146,7 @@ public:
     static void startCodeOnNewThread(lua_State* L, const char* chunk_name, const char* code, size_t code_size, Feedback feedback, OnKill on_kill = nullptr, Console* console = nullptr);
 
     static int yieldThread(lua_State* thread);
-    static int yieldForWorkThreaded(lua_State* thread, WorkloadThreaded work);
-    static int yieldForWork(lua_State* thread, Workload work, void* userdata);
+    static int yieldForWork(lua_State* thread, YieldFunction callback, bool threaded);
 
     static void run();
 

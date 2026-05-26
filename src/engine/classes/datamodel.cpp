@@ -60,15 +60,20 @@ void DataModel::onShutdown(lua_State* L) {
     lua_call(L, 1, 0);
 }
 
-void httpGetInternal(lua_State* L, const char* url) {
-    struct MemoryStruct chunk;
+void httpGetInternal(const char* url, Yield yield) {
+    MemoryStruct chunk;
 
-    CURLcode res = newGetRequest(url, &chunk);
-    if (res)
-        luaL_errorL(L, "failed to make HTTP GET request (%d)", res);
+    newGetRequest(url, &chunk);
 
-    lua_pushlstring(L, chunk.memory, chunk.size);
-    if (chunk.memory) free(chunk.memory);
+    yield.finish([chunk] (lua_State* L) {
+        if (chunk.res)
+            luaL_errorL(L, "failed to make HTTP GET request (%d)", chunk.res);
+
+        lua_pushlstring(L, chunk.memory, chunk.size);
+        if (chunk.memory) free(chunk.memory);
+
+        return 1;
+    });
 }
 
 namespace rbxInstance_DataModel_methods {
@@ -105,38 +110,17 @@ namespace rbxInstance_DataModel_methods {
 
         bool synchronous = httpget_synchronous_argument && luaL_optboolean(L, 3, false);
 
-        if (synchronous) {
-            typedef struct {
-                std::string url;
-            } Userdata;
-            Userdata* ud = static_cast<Userdata*>(malloc(sizeof(Userdata)));
-            new(ud) Userdata;
-            ud->url = url;
-
-            return TaskScheduler::yieldForWork(L, [] (lua_State* thread, void* ud) {
-                Userdata* userdata = static_cast<Userdata*>(ud);
-
-                httpGetInternal(thread, userdata->url.c_str());
-
-                userdata->~Userdata();
-
-                return 1;
-            }, ud);
-        }
-
-        return TaskScheduler::yieldForWorkThreaded(L, [url] (lua_State* thread) {
-            httpGetInternal(thread, url.c_str());
-            return 1;
-        });
+        return TaskScheduler::yieldForWork(L, [url] (Yield yield) {
+            httpGetInternal(url.c_str(), yield);
+        }, !synchronous);
     }
     static int httpGetAsync(lua_State* L) {
         lua_checkinstance(L, 1, "DataModel");
         std::string url = luaL_checkstring(L, 2);
 
-        return TaskScheduler::yieldForWorkThreaded(L, [url] (lua_State* thread) {
-            httpGetInternal(thread, url.c_str());
-            return 1;
-        });
+        return TaskScheduler::yieldForWork(L, [url] (Yield yield) {
+            httpGetInternal(url.c_str(), yield);
+        }, true);
     }
 }; // namespace rbxInstance_DataModel_methods
 

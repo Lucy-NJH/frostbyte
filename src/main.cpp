@@ -726,8 +726,9 @@ int main(int argc, char** argv) {
         getTask(fontL)->identifier.assign(buf);
     }
 
-    lua_State* dont_kill_thread_list[4] = { appL, userL, testL, fontL };
-    lua_State** dont_kill_thread_list_end = dont_kill_thread_list + IM_ARRAYSIZE(dont_kill_thread_list);
+    lua_State* protected_thread_list[] = { appL, userL, testL, fontL };
+    size_t protected_thread_count = sizeof(protected_thread_list) / sizeof(protected_thread_list[0]);
+    lua_State** protected_thread_list_end = protected_thread_list + protected_thread_count;
 
     bool all_tests_succeeded = false;
     bool has_tested = false;
@@ -1104,14 +1105,20 @@ int main(int argc, char** argv) {
             if (ImGui::Begin("Thread List", &menu_thread_list_open)) {
                 lua_State* thread_to_kill = nullptr;
 
-                std::shared_lock lock(TaskScheduler::thread_list_mutex);
-                for (size_t i = 0; i < TaskScheduler::thread_list.size();i ++) {
+                // std::shared_lock lock(TaskScheduler::thread_list_mutex);
+                for (size_t i = 0; i < TaskScheduler::thread_list.size(); i++) {
                     lua_State* thread = TaskScheduler::thread_list[i];
                     Task* task = getTask(thread);
                     std::string identifier = task->identifier;
 
                     if (ImGui::Button(identifier.c_str()))
                         task->view.open = true;
+
+                    if (i == protected_thread_count - 1) {
+                        ImGui::Separator();
+                        ImGui::Text("Thread count: %lu", TaskScheduler::thread_list.size() - protected_thread_count);
+                    }
+
                     if (task->view.open) {
                         std::string win_id = std::string("Thread ");
                         win_id.append(identifier);
@@ -1131,12 +1138,14 @@ int main(int argc, char** argv) {
                             };
                             ImGui::Combo("Capability", reinterpret_cast<int*>(&task->capability), capability_item_list, IM_ARRAYSIZE(capability_item_list));
 
-                            const bool dont_kill = std::find(dont_kill_thread_list, dont_kill_thread_list_end, thread) != dont_kill_thread_list_end;
-                            if (dont_kill)
+                            const bool is_protected = std::find(protected_thread_list, protected_thread_list_end, thread) != protected_thread_list_end;
+                            if (is_protected)
                                 ImGui::BeginDisabled();
+
                             if (ImGui::Button("Kill"))
                                 thread_to_kill = thread;
-                            if (dont_kill) {
+
+                            if (is_protected) {
                                 ImGui::SetItemTooltip("protected thread");
                                 ImGui::EndDisabled();
                             }
@@ -1145,7 +1154,7 @@ int main(int argc, char** argv) {
                         }
                     }
                 }
-                lock.unlock();
+                // lock.unlock();
 
                 if (thread_to_kill)
                     TaskScheduler::killThread(thread_to_kill);
@@ -1201,40 +1210,30 @@ int main(int argc, char** argv) {
         TaskScheduler::run();
 
         {
-        static std::vector<size_t> workloads_to_remove;
-        workloads_to_remove.clear();
+        std::lock_guard lock(TaskScheduler::pending_yield_mutex);
 
-        for (size_t i = 0; i < TaskScheduler::workload_list.size(); i++) {
-            const auto& tuple = TaskScheduler::workload_list[i];
-
-            auto& workload = std::get<0>(tuple);
-            auto& thread = std::get<1>(tuple);
-            auto& userdata = std::get<2>(tuple);
+        while (!TaskScheduler::pending_yield_list.empty()) {
+            auto& yield = TaskScheduler::pending_yield_list.front();
+            auto thread = yield.state;
 
             int arg_count = 0;
             try {
-                // FIXME: one time the below code errored (environment fr_wait lambda's lua_pushnumber did), making me think we should do a lua gc cycle before this..
-                arg_count = workload(thread, userdata);
-            } catch(std::exception& e) {
-                TaskScheduler::killThread(thread);
+                arg_count = yield.finisher(thread);
+            } catch (std::exception& e) {
                 getTask(thread)->feedback(e.what());
-                goto REMOVE;
             }
 
-            if (arg_count == -2)
-                continue;
+            TaskScheduler::pending_yield_list.pop();
 
-            TaskScheduler::queueForResume(thread, arg_count);
-
-            REMOVE:
-            workloads_to_remove.push_back(i);
-            if (userdata)
-                free(userdata);
+            if (arg_count == YIELD_ERROR) {
+                getTask(thread)->feedback(getErrorMessage(thread));
+                TaskScheduler::killThread(thread);
+            // TODO: if finisher throws exception, do we kill the thread?
+            } else if (arg_count == YIELD_KILL)
+                TaskScheduler::killThread(thread);
+            else
+                TaskScheduler::queueForResume(thread, arg_count);
         }
-
-        for (const auto& i : workloads_to_remove)
-            TaskScheduler::workload_list.erase(TaskScheduler::workload_list.begin() + i);
-
         }
 
         RunService::heartbeat(appL);
@@ -1256,8 +1255,8 @@ int main(int argc, char** argv) {
 
     rbxInstanceCleanup(appL);
 
-    for (int i = 0; i < IM_ARRAYSIZE(dont_kill_thread_list); i++)
-        TaskScheduler::killThread(dont_kill_thread_list[i]);
+    for (int i = 0; i < IM_ARRAYSIZE(protected_thread_list); i++)
+        TaskScheduler::killThread(protected_thread_list[i]);
 
     // probably redundant?
     TaskScheduler::cleanup();

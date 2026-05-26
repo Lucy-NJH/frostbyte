@@ -10,7 +10,7 @@ namespace frostbyte {
 
 static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp) {
     size_t realsize = size * nmemb;
-    struct MemoryStruct *mem = (struct MemoryStruct *)userp;
+    MemoryStruct *mem = (MemoryStruct *)userp;
 
     mem->memory = static_cast<char*>(realloc(mem->memory, mem->size + realsize + 1));
     if(mem->memory == NULL) {
@@ -25,7 +25,7 @@ static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, voi
     return realsize;
 }
 
-CURLcode performRequest(CURL* curl, struct MemoryStruct* chunk, const char* method = "GET") {
+void performRequest(CURL* curl, MemoryStruct* chunk, const char* method = "GET") {
     CURLcode res;
 
     chunk->memory = static_cast<char*>(malloc(1));
@@ -45,17 +45,17 @@ CURLcode performRequest(CURL* curl, struct MemoryStruct* chunk, const char* meth
     res = curl_easy_perform(curl);
     curl_easy_cleanup(curl);
 
-    return res;
+    chunk->res = res;
 }
 /* credits END: https://stackoverflow.com/questions/27007379/how-do-i-get-response-value-using-curl-in-c/27007490#27007490 */
 
-CURLcode newGetRequest(const char* url, struct MemoryStruct* chunk) {
+void newGetRequest(const char* url, MemoryStruct* chunk) {
     CURL* curl = curl_easy_init();
     if (curl) {
         curl_easy_setopt(curl, CURLOPT_URL, url);
         return performRequest(curl, chunk);
     }
-    return CURLE_FAILED_INIT;
+    chunk->res = CURLE_FAILED_INIT;
 }
 
 };

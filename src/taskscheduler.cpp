@@ -64,18 +64,18 @@ bool TaskScheduler::sandboxing = true;
 double TaskScheduler::initial_client_time = 0; // gets set in main
 
 int TaskScheduler::target_fps = 240;
-std::shared_mutex TaskScheduler::target_fps_mutex;
+// std::shared_mutex TaskScheduler::target_fps_mutex;
 
 void TaskScheduler::setTargetFps(int target) {
-    std::lock_guard lock(target_fps_mutex);
+    // std::lock_guard lock(target_fps_mutex);
 
     target_fps = target;
     SetTargetFPS(target);
 }
 
-std::shared_mutex TaskScheduler::gc_mutex;
+// std::shared_mutex TaskScheduler::gc_mutex;
 bool TaskScheduler::gcShouldRun(lua_State* L) {
-    std::lock_guard lock(gc_mutex);
+    // std::lock_guard lock(gc_mutex);
 
     return lua_gc(L, LUA_GCISRUNNING, 0);
 }
@@ -83,17 +83,17 @@ bool TaskScheduler::gcActuallyPaused(lua_State* L) {
     return L->global->gcstate == GCSpause;
 }
 void TaskScheduler::gcCollect(lua_State* L) {
-    std::lock_guard lock(gc_mutex);
+    // std::lock_guard lock(gc_mutex);
 
     lua_gc(L, LUA_GCCOLLECT, 0);
 }
 void TaskScheduler::pauseGarbageCollection(lua_State* L) {
-    std::lock_guard lock(gc_mutex);
+    // std::lock_guard lock(gc_mutex);
 
     lua_gc(L, LUA_GCSTOP, 0);
 }
 void TaskScheduler::resumeGarbageCollection(lua_State* L) {
-    std::lock_guard lock(gc_mutex);
+    // std::lock_guard lock(gc_mutex);
 
     lua_gc(L, LUA_GCRESTART, 0);
 }
@@ -114,12 +114,13 @@ void TaskScheduler::performGCWork(lua_State* L, std::function<void()> work) {
 lua_State* TaskScheduler::mainL = nullptr;
 
 std::vector<lua_State*> TaskScheduler::thread_list;
-std::shared_mutex TaskScheduler::thread_list_mutex;
+// std::shared_mutex TaskScheduler::thread_list_mutex;
 
-std::vector<std::tuple<Workload, lua_State*, void*>> TaskScheduler::workload_list;
+std::queue<Yield> TaskScheduler::pending_yield_list;
+std::shared_mutex TaskScheduler::pending_yield_mutex;
 
 std::vector<lua_State*> TaskScheduler::thread_queue;
-std::shared_mutex TaskScheduler::thread_queue_mutex;
+// std::shared_mutex TaskScheduler::thread_queue_mutex;
 
 void TaskScheduler::setup(lua_State *L) {
     mainL = L;
@@ -145,7 +146,7 @@ void TaskScheduler::setup(lua_State *L) {
 
             lua_setthreaddata(thread, task);
 
-            std::lock_guard lock(TaskScheduler::thread_list_mutex);
+            // std::lock_guard lock(TaskScheduler::thread_list_mutex);
             TaskScheduler::thread_list.push_back(thread);
         } else {
             killThread(thread);
@@ -174,7 +175,7 @@ void TaskScheduler::killThreadUnlocked(lua_State* thread) {
     Task* task = getTask(thread);
     lua_unref(task->parent, task->ref);
 
-    std::shared_lock thread_queue_lock(thread_queue_mutex);
+    // std::shared_lock thread_queue_lock(thread_queue_mutex);
 
     auto thread_queue_position = std::find(thread_queue.begin(), thread_queue.end(), thread);
     if (thread_queue_position != thread_queue.end())
@@ -185,14 +186,14 @@ void TaskScheduler::killThreadUnlocked(lua_State* thread) {
         task->on_kill();
 }
 void TaskScheduler::killThread(lua_State* thread) {
-    std::shared_lock thread_list_lock(thread_list_mutex);
+    // std::shared_lock thread_list_lock(thread_list_mutex);
 
     auto thread_list_position = std::find(thread_list.begin(), thread_list.end(), thread);
     if (thread_list_position == thread_list.end())
         return;
     thread_list.erase(thread_list_position);
 
-    thread_list_lock.unlock();
+    // thread_list_lock.unlock();
 
     killThreadUnlocked(thread);
 }
@@ -211,41 +212,7 @@ bool resumeThreadRaw(lua_State* thread) {
             task->status = YIELDING;
             return true;
         case LUA_ERRRUN: {
-            const char* str = lua_tostring(thread, -1);
-            std::string msg = str == nullptr ? "unknown" : str;
-
-            msg.push_back('\n');
-
-            // ldblib.cpp
-            lua_Debug ar;
-            for (int i = 1; lua_getinfo(thread, i, "sln", &ar); ++i) {
-                if (strcmp(ar.what, "C") == 0)
-                    continue;
-
-                if (ar.source)
-                    msg.append(ar.short_src);
-
-                if (ar.currentline > 0) {
-                    char line[32]; // manual conversion for performance
-                    char* lineend = line + sizeof(line);
-                    char* lineptr = lineend;
-                    for (unsigned int r = ar.currentline; r > 0; r /= 10)
-                        *--lineptr = '0' + (r % 10);
-
-                    msg.push_back(':');
-                    msg.append(lineptr, lineend - lineptr);
-                }
-
-                if (ar.name) {
-                    msg.append(" function ");
-                    msg.append(ar.name);
-                }
-
-                msg.push_back('\n');
-            }
-
-            lua_pop(thread, 1);
-            throw std::runtime_error(msg);
+            throw std::runtime_error(getErrorMessage(thread));
         }
         default: {
             std::string msg = "unexpected resume status: ";
@@ -342,41 +309,31 @@ int TaskScheduler::yieldThread(lua_State* thread) {
     return lua_yield(thread, 0);
 }
 
-int TaskScheduler::yieldForWorkThreaded(lua_State* thread, WorkloadThreaded work) {
+int TaskScheduler::yieldForWork(lua_State* thread, YieldFunction callback, bool threaded) {
     Task* task = getTask(thread);
     assert(task);
 
     int r = yieldThread(thread);
 
-    std::thread t([thread, task, work]() {
-        int arg_count = 0;
-        try {
-            arg_count = work(thread);
-        } catch(std::exception& e) {
-            killThread(thread);
-            task->feedback(e.what());
-            return;
-        }
+    if (threaded) {
+        std::thread t([thread, callback]() {
+            Yield yield(thread, &pending_yield_list, &pending_yield_mutex);
+            callback(yield);
+        });
 
-        queueForResume(thread, arg_count);
-    });
-
-    t.detach();
-
-    return r;
-}
-int TaskScheduler::yieldForWork(lua_State* thread, Workload work, void* userdata) {
-    int r = yieldThread(thread);
-
-    workload_list.emplace_back(work, thread, userdata);
+        t.detach();
+    } else {
+        Yield yield(thread, &pending_yield_list, &pending_yield_mutex);
+        callback(yield);
+    }
 
     return r;
 }
 
 void TaskScheduler::resumeThread(lua_State* thread) {
-    std::unique_lock thread_queue_lock(thread_queue_mutex);
+    // std::unique_lock thread_queue_lock(thread_queue_mutex);
     thread_queue.erase(std::find(thread_queue.begin(), thread_queue.end(), thread));
-    thread_queue_lock.unlock();
+    // thread_queue_lock.unlock();
 
     Task* task = getTask(thread);
 
@@ -393,7 +350,7 @@ void TaskScheduler::resumeThread(lua_State* thread) {
 }
 
 void TaskScheduler::run() {
-    std::shared_lock task_queue_lock(thread_queue_mutex);
+    // std::shared_lock task_queue_lock(thread_queue_mutex);
 
     static std::vector<lua_State*> filtered_threads;
     filtered_threads.clear();
@@ -425,7 +382,7 @@ void TaskScheduler::run() {
         if (passes)
             filtered_threads.push_back(thread);
     }
-    task_queue_lock.unlock();
+    // task_queue_lock.unlock();
 
     for (size_t i = 0; i < filtered_threads.size(); i++)
         resumeThread(filtered_threads[i]);
@@ -434,7 +391,7 @@ void TaskScheduler::run() {
 void TaskScheduler::cleanup() {
     mainL = nullptr;
 
-    std::lock_guard lock(thread_list_mutex);
+    // std::lock_guard lock(thread_list_mutex);
 
     for (size_t i = 0; i < thread_list.size(); i++)
         killThreadUnlocked(thread_list[i]);
@@ -504,7 +461,7 @@ std::optional<PreSpawnResult> preTaskSpawn(lua_State* L, const char* func_name, 
 }
 
 void TaskScheduler::queueThread(lua_State* thread) {
-    std::shared_lock lock(thread_queue_mutex);
+    // std::shared_lock lock(thread_queue_mutex);
     thread_queue.push_back(thread);
 }
 

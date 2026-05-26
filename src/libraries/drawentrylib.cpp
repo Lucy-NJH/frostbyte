@@ -22,10 +22,10 @@
 namespace frostbyte {
 
 std::vector<DrawEntry*> DrawEntry::draw_list;
-std::shared_mutex DrawEntry::draw_list_mutex;
+// std::shared_mutex DrawEntry::draw_list_mutex;
 
 void sortDrawList() {
-    std::lock_guard lock(DrawEntry::draw_list_mutex);
+    // std::lock_guard lock(DrawEntry::draw_list_mutex);
 
     // TODO: use a std::set if stable sort is still possible (see drawingimmediate)
     std::stable_sort(DrawEntry::draw_list.begin(), DrawEntry::draw_list.end(), [] (DrawEntry* a, DrawEntry* b) {
@@ -141,7 +141,7 @@ void DrawEntry::destroy(lua_State* L, bool dont_erase) {
     alive = false;
 
     if (!dont_erase) {
-        std::lock_guard lock(DrawEntry::draw_list_mutex);
+        // std::lock_guard lock(DrawEntry::draw_list_mutex);
         DrawEntry::draw_list.erase(std::find(DrawEntry::draw_list.begin(), DrawEntry::draw_list.end(), this));
     }
 
@@ -183,9 +183,9 @@ DrawEntry* pushNewDrawEntry(lua_State* L, const char* class_name) {
     DrawEntry* entry = static_cast<DrawEntry*>(ud);
     entry->color.a = 255;
 
-    std::shared_lock lock(DrawEntry::draw_list_mutex);
+    // std::shared_lock lock(DrawEntry::draw_list_mutex);
     DrawEntry::draw_list.push_back(entry);
-    lock.unlock();
+    // lock.unlock();
 
     sortDrawList();
 
@@ -194,7 +194,7 @@ DrawEntry* pushNewDrawEntry(lua_State* L, const char* class_name) {
     lua_setmetatable(L, -3);
 
     lua_getfield(L, -1, "objects");
-    entry->lookup_index = addToLookup(L, [&L, &original_top] () {
+    entry->lookup_index = addToLookup(L, [&L, original_top] () {
         lua_pushvalue(L, original_top);
     });
 
@@ -394,7 +394,7 @@ int DrawEntry__index(lua_State* L) {
         return 0;
 
     {
-    std::lock_guard lock(entry->members_mutex);
+    // std::lock_guard lock(entry->members_mutex);
 
     if (strequal(key, "Visible"))
         lua_pushboolean(L, entry->visible);
@@ -563,7 +563,7 @@ int DrawEntry__newindex(lua_State* L) {
     }
 
     {
-    std::lock_guard lock(entry->members_mutex);
+    // std::lock_guard lock(entry->members_mutex);
 
     if (strequal(key, "Visible"))
         entry->visible = luaL_checkboolean(L, 3);
@@ -571,7 +571,7 @@ int DrawEntry__newindex(lua_State* L) {
         entry->zindex = luaL_checkinteger(L, 3);
         entry->onZIndexUpdate();
     } else if (strequal(key, "Transparency") || strequal(key, "Opacity")) {
-        double alpha = luaL_checknumberrange(L, 3, 0, 1, "Transparency") * 255.f;
+        float alpha = luaL_checknumberrange(L, 3, 0, 1, "Transparency") * 255.f;
         entry->color.a = alpha;
         if (entry->type == DrawEntry::DrawTypeText)
             static_cast<DrawEntryText*>(entry)->outline_color.a = alpha;
@@ -820,7 +820,7 @@ void open_drawentrylib(lua_State *L) {
     // metatable
     userdata::newClassMetatable(L, userdata::DrawEntry);
 
-    newweaktable(L);
+    lua_newtable(L);
     lua_setfield(L, -2, "objects");
 
     setfunctionfield(L, DrawEntry__tostring, "__tostring");
@@ -832,7 +832,7 @@ void open_drawentrylib(lua_State *L) {
 }
 
 void DrawEntry::clear(lua_State *L) {
-    std::lock_guard draw_list_lock(draw_list_mutex);
+    // std::lock_guard draw_list_lock(draw_list_mutex);
 
     while (!draw_list.empty()) {
         auto& entry = draw_list.back();
@@ -842,11 +842,11 @@ void DrawEntry::clear(lua_State *L) {
 }
 
 void DrawEntry::render() {
-    std::lock_guard draw_list_lock(draw_list_mutex);
+    // std::lock_guard draw_list_lock(draw_list_mutex);
 
     for (size_t i = 0; i < draw_list.size(); i++) {
         DrawEntry* entry = draw_list[i];
-        std::lock_guard members_lock(entry->members_mutex);
+        // std::lock_guard members_lock(entry->members_mutex);
 
         if (!entry->visible)
             continue;

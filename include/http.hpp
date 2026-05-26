@@ -5,10 +5,11 @@
 
 namespace frostbyte {
 
-struct MemoryStruct {
+typedef struct {
     char *memory;
     size_t size;
-};
-CURLcode newGetRequest(const char* url, struct MemoryStruct* chunk);
+    CURLcode res;
+} MemoryStruct;
+ void newGetRequest(const char* url, MemoryStruct* chunk);
 
 };

@@ -13,7 +13,7 @@ namespace frostbyte {
 class DrawEntry {
 public:
     static std::vector<DrawEntry*> draw_list;
-    static std::shared_mutex draw_list_mutex;
+    // static std::shared_mutex draw_list_mutex;
 
     static void clear(lua_State* L);
     static void render();
@@ -32,11 +32,11 @@ public:
     int lookup_index;
     bool alive = true;
 
-    std::shared_mutex members_mutex;
+    // std::shared_mutex members_mutex;
 
     bool visible = false;
     int zindex = 0; // TODO: verify default value
-    Color color{255, 255, 255};
+    Color color{255, 255, 255, 255};
 
     void onZIndexUpdate();
     void free();
