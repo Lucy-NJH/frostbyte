@@ -411,6 +411,7 @@ void open_frostbyte_environment(lua_State *L) {
     lua_setfield(L, LUA_REGISTRYINDEX, STRINGLOOKUP);
 
     env_expose(print)
+    env_alias(print, peibr) // shoutout xander
     env_expose(warn)
 
     env_expose(getexecutorname)
