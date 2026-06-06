@@ -8,13 +8,30 @@
 #include "lua.h"
 #include "lualib.h"
 
+#include <algorithm>
+
 namespace frostbyte {
 
-int pushNewRBXScriptSignal(lua_State* L, std::string name) {
+std::vector<rbxScriptSignal*> signal_list;
+
+rbxScriptSignal::~rbxScriptSignal() {
+    auto it = std::find(signal_list.begin(), signal_list.end(), this);
+    if (it != signal_list.end())
+        signal_list.erase(it);
+}
+
+void rbxScriptSignal::cleanup() {
+    while (!signal_list.empty())
+        signal_list.back()->~rbxScriptSignal();
+}
+
+int pushNewRBXScriptSignal(lua_State* L, const char* name) {
     lua_getfield(L, LUA_REGISTRYINDEX, SIGNALCONNECTIONLISTLOOKUP);
 
     rbxScriptSignal* signal = static_cast<rbxScriptSignal*>(lua_newuserdatatagged(L, sizeof(rbxScriptSignal), userdata::RBXScriptSignal));
     new(signal) rbxScriptSignal();
+
+    signal_list.push_back(signal);
 
     signal->name.assign(name);
 

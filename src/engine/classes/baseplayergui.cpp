@@ -360,7 +360,7 @@ void contributeToRenderList(std::shared_ptr<rbxInstance> instance, bool is_stora
 
 void fireMouseMovementSignal(lua_State* L, Vector2& mouse, std::shared_ptr<rbxInstance> instance, const char* event) {
     pushFunctionFromLookup(L, fireRBXScriptSignal);
-    instance->pushEvent(L, event);
+    instance->pushSignal(L, event, true);
 
     lua_pushnumber(L, mouse.x);
     lua_pushnumber(L, mouse.y);

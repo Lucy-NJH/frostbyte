@@ -13,10 +13,13 @@ class rbxScriptSignal {
 public:
     std::string name;
     std::vector<rbxScriptConnection> connection_list;
+    ~rbxScriptSignal();
+
+    static void cleanup();
 };
 
 void pushSignalConnectionList(lua_State* L, int narg);
-int pushNewRBXScriptSignal(lua_State* L, std::string name);
+int pushNewRBXScriptSignal(lua_State* L, const char* name);
 rbxScriptSignal* lua_checkrbxscriptsignal(lua_State* L, int narg);
 
 // push signal, then args, just like a function (NOT REALLY; THIS FUNCTION USES POSITIVE INDEXES AND EXPECTS FUNCTION TO BE AT R1)

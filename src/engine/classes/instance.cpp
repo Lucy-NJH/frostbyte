@@ -77,37 +77,38 @@ std::vector<std::weak_ptr<rbxInstance>> rbxInstance::instance_list;
 
 rbxInstance::rbxInstance(std::shared_ptr<rbxClass> _class) : _class(_class) {}
 
-// lua_State* rbxInstance::destructorL = nullptr;
+lua_State* rbxInstance::destructorL = nullptr;
 
 rbxInstance::~rbxInstance() {
     Console::ScriptConsole.debugf("destroying instance %s...", getValue<std::string>("ClassName").c_str());
 
-    /*
-    // FIXME: we need to free events at some point, but the below code doesn't work because L is not guaranteed to allowstack manipulation
+    if (game_active && destructorL && getTask(destructorL)) {
+        auto global = destructorL->global;
+        int threshold = global->GCthreshold;
+        global->GCthreshold = SIZE_MAX;
 
-    // #define killEvent(event) {                               \
-    //     pushEvent(destructorL, event);                                 \
-    //     lua_checkrbxscriptsignal(destructorL, -1)->~rbxScriptSignal(); \
-    //     lua_pop(destructorL, 1);                                       \
-    // }
+        lua_getfield(destructorL, LUA_REGISTRYINDEX, SIGNALLOOKUP);
+        lua_pushlightuserdata(destructorL, this);
+        lua_rawget(destructorL, -2);
+        lua_remove(destructorL, -2);
 
-    // if (destructorL)
-    //     for (auto& event : events)
-    //         killEvent(event.c_str())
-    */
+        lua_pushnil(destructorL);
+        while (lua_next(destructorL, -2)) {
+            lua_checkrbxscriptsignal(destructorL, -1)->~rbxScriptSignal();
+            lua_pop(destructorL, 1);
+        }
+
+        lua_pop(destructorL, 1);
+
+        global->GCthreshold = threshold;
+    }
 
     rbxClass* c = _class.get();
     while (c) {
-        // if (destructorL)
-        //     for (auto& property : c->properties)
-        //         killEvent(property.first.c_str());
-
         if (c->destructor)
             c->destructor(this);
         c = c->superclass.get();
     }
-
-    // #undef killEvent
 }
 
 bool rbxInstance::isA(rbxClass* target_class) {
@@ -125,22 +126,39 @@ bool rbxInstance::isA(const char* class_name) {
 
 int rbxInstance__index(lua_State* L);
 
-int rbxInstance::pushEvent(lua_State* L, const char* name) {
+int rbxInstance::pushSignal(lua_State* L, const char* name, bool is_event, bool dont_create) {
+    if (is_event && !dont_create) {
+        auto event = events.at(name);
+        auto route = &event->route;
+        // NOTE: we need to check if the route exists because Roblox decided to have certain PreferredDescriptorNames set to events of other classes (like Mouse.KeyDown is set to InputBegan).....
+        if (*route && (events.find(route->value()) != events.end()))
+            event = events.at(route->value());
+
+        name = event->name.c_str();
+    }
+
     lua_getfield(L, LUA_REGISTRYINDEX, SIGNALLOOKUP);
     lua_pushlightuserdata(L, this);
     lua_rawget(L, -2);
     lua_pushstring(L, name);
     lua_rawget(L, -2);
 
-    assert(!lua_isnil(L, -1));
+    int event_existed = !lua_isnil(L, -1);
+
+    if (!event_existed && !dont_create) {
+        lua_pop(L, 1);
+        pushNewRBXScriptSignal(L, name);
+        lua_pushvalue(L, -1);
+        lua_rawsetfield(L, -3, name);
+    }
 
     lua_remove(L, -2); // remove signallookup
     lua_remove(L, -2); // remove signallookup table
-    return 1;
+    return event_existed;
 }
 void reportChanged(lua_State* L, std::shared_ptr<rbxInstance> instance, const char* property) {
     pushFunctionFromLookup(L, fireRBXScriptSignal);
-    instance->pushEvent(L, "Changed");
+    instance->pushSignal(L, "Changed", true);
     if (instance->isA("ValueBase")) {
         lua_pushcfunction(L, rbxInstance__index, "__index");
         lua_pushinstance(L, instance);
@@ -151,8 +169,10 @@ void reportChanged(lua_State* L, std::shared_ptr<rbxInstance> instance, const ch
     lua_call(L, 2, 0);
 
     pushFunctionFromLookup(L, fireRBXScriptSignal);
-    instance->pushEvent(L, property);
-    lua_call(L, 1, 0);
+    if (instance->pushSignal(L, property, false, true)) {
+        lua_call(L, 1, 0);
+    } else
+        lua_pop(L, 2);
 }
 
 void clearAllInstanceChildren(lua_State* L, std::shared_ptr<rbxInstance> instance) {
@@ -171,19 +191,21 @@ void destroyInstance(lua_State* L, std::shared_ptr<rbxInstance> instance, bool d
 
     clearAllInstanceChildren(L, instance);
 
-    for (auto& event : instance->events) {
+    for (auto& pair : instance->events) {
+        if (pair.second->route)
+            continue;
         pushFunctionFromLookup(L, disconnectAllRBXScriptSignal);
-        instance->pushEvent(L, event.c_str());
+        instance->pushSignal(L, pair.first.c_str(), true);
         lua_call(L, 1, 0);
     }
     rbxClass* c = instance->_class.get();
     while (c) {
         for (auto& property : c->properties) {
-            if (property.second->route)
-                continue;
             pushFunctionFromLookup(L, disconnectAllRBXScriptSignal);
-            instance->pushEvent(L, property.first.c_str());
-            lua_call(L, 1, 0);
+            if (instance->pushSignal(L, property.first.c_str(), false, true))
+                lua_call(L, 1, 0);
+            else
+                lua_pop(L, 2);
         }
         c = c->superclass.get();
     }
@@ -515,7 +537,7 @@ int getAttributeChangedSignal(lua_State* L, std::shared_ptr<rbxInstance> instanc
     lua_rawgetfield(L, -1, name.c_str());
     if (lua_isnil(L, -1)) {
         lua_pop(L, 1);
-        pushNewRBXScriptSignal(L, name);
+        pushNewRBXScriptSignal(L, name.c_str());
         lua_pushvalue(L, -1);
         lua_rawsetfield(L, -3, name.c_str());
     }
@@ -722,7 +744,8 @@ namespace rbxInstance_methods {
         if (property->tags & rbxProperty::NotScriptable)
             luaL_error(L, "%s is not a scriptable property.", key);
 
-        return instance->pushEvent(L, key);
+        instance->pushSignal(L, key, false);
+        return 1;
     }
     static int isA(lua_State* L) {
         auto instance = lua_checkinstance(L, 1);
@@ -1017,8 +1040,10 @@ int rbxInstance__index(lua_State* L) {
     if (instance->values.find(key) == instance->values.end()) {
         if (instance->methods.find(key) != instance->methods.end())
             return pushMethod(L, instance, key);
-        if (std::find(instance->events.begin(), instance->events.end(), key) != instance->events.end())
-            return instance->pushEvent(L, key);
+        if (instance->events.find(key) != instance->events.end()) {
+            instance->pushSignal(L, key, true);
+            return 1;
+        }
 
         auto child = instance->findFirstChild(key);
         if (child) {
@@ -1082,6 +1107,16 @@ void setInstanceParent(lua_State* L, std::shared_ptr<rbxInstance> instance, std:
         // std::lock_guard parent_children_lock(new_parent->children_mutex);
 
         new_parent->children.push_back(instance);
+
+        pushFunctionFromLookup(L, fireRBXScriptSignal);
+        new_parent->pushSignal(L, "DescendantAdded", true);
+        lua_pushinstance(L, instance);
+        lua_call(L, 2, 0);
+
+        pushFunctionFromLookup(L, fireRBXScriptSignal);
+        new_parent->pushSignal(L, "ChildAdded", true);
+        lua_pushinstance(L, instance);
+        lua_call(L, 2, 0);
     }
 
     if (!dont_set_value)
@@ -1335,15 +1370,15 @@ std::shared_ptr<rbxInstance> newInstance(lua_State* L, const char* class_name, s
             if (property.second->route)
                 continue;
             instance->values[property.first] = property.second->default_value;
-            // for GetPropertyChangedSignal
-            pushNewRBXScriptSignal(L, property.first);
-            lua_rawsetfield(L, -2, property.first.c_str());
         }
         instance->methods.insert(c->methods.begin(), c->methods.end());
-        instance->events.insert(instance->events.end(), c->events.begin(), c->events.end());
-        for (auto& event : c->events) {
-            pushNewRBXScriptSignal(L, event);
-            lua_rawsetfield(L, -2, event.c_str());
+        for (size_t i = 0; i < c->events.size(); i++) {
+            auto event = &c->events[i];
+            instance->events[event->name] = event;
+            if (event->route)
+                continue;
+            pushNewRBXScriptSignal(L, event->name.c_str());
+            lua_rawsetfield(L, -2, event->name.c_str());
         }
         if (c->constructor)
             c->constructor(L, instance);
@@ -1531,7 +1566,7 @@ static int fr_gethui(lua_State* L) {
 }
 
 void rbxInstanceSetup(lua_State* L, std::string api_dump) {
-    // rbxInstance::destructorL = TaskScheduler::newThread(L, [] (std::string error) { Console::ScriptConsole.error(error); });
+    rbxInstance::destructorL = TaskScheduler::newThread(L, [] (std::string error) { Console::ScriptConsole.error(error); });
 
     // instancelookup
     newweaktable(L);
@@ -1736,7 +1771,17 @@ void rbxInstanceSetup(lua_State* L, std::string api_dump) {
                 }
                 _class->methods.try_emplace(member_name, method);
             } else if (member_type == "Event") {
-                _class->events.push_back(member_name);
+                rbxEvent event;
+                event.name = member_name;
+
+                if (tags.type() == json::value_t::array) {
+                    for (auto& tag_json : tags) {
+                        if (tag_json.type() != json::value_t::string)
+                            event.route = tag_json["PreferredDescriptorName"].template get<std::string>();
+                    }
+                }
+
+                _class->events.push_back(event);
             }
         }
 

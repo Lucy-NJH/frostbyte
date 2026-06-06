@@ -459,7 +459,7 @@ void TweenService::process(lua_State *L) {
 
         pushFunctionFromLookup(L, fireRBXScriptSignal);
 
-        tween_instance->pushEvent(L, "Completed");
+        tween_instance->pushSignal(L, "Completed", true);
         pushEnumItem(L, playback_state);
 
         lua_call(L, 2, 0);

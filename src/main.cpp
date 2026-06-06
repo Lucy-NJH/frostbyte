@@ -23,6 +23,7 @@
 #include "engine/datatypes/numberrange.hpp"
 #include "engine/datatypes/numbersequence.hpp"
 #include "engine/datatypes/numbersequencekeypoint.hpp"
+#include "engine/datatypes/rbxscriptsignal.hpp"
 #include "engine/datatypes/rect.hpp"
 #include "engine/datatypes/tweeninfo.hpp"
 #include "engine/datatypes/udim.hpp"
@@ -572,6 +573,8 @@ void changeImGuiTheme(ImGuiTheme theme) {
 
 Shader frostbyte::round_shader;
 
+bool frostbyte::game_active = false;
+
 int main(int argc, char** argv) {
     const double initial_game_time = lua_clock();
     TaskScheduler::initial_client_time = initial_game_time;
@@ -772,6 +775,7 @@ int main(int argc, char** argv) {
 
     DataModel::onLoad(L);
 
+    game_active = true;
     while (!WindowShouldClose() && !DataModel::shutdown) {
         const bool anyImGui = ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow);
         if (enable_user_input_service)
@@ -1250,6 +1254,7 @@ int main(int argc, char** argv) {
         setInstanceValue<double>(Workspace::instance, appL, "DistributedGameTime", lua_clock() - initial_game_time);
     }
     DataModel::onShutdown(appL);
+    game_active = false;
 
     UnloadShader(round_shader);
 
@@ -1263,9 +1268,10 @@ int main(int argc, char** argv) {
     CloseWindow();
 
     rbxInstanceCleanup(appL);
+    rbxScriptSignal::cleanup();
 
-    for (int i = 0; i < IM_ARRAYSIZE(protected_thread_list); i++)
-        TaskScheduler::killThread(protected_thread_list[i]);
+    // for (int i = 0; i < IM_ARRAYSIZE(protected_thread_list); i++)
+    //     TaskScheduler::killThread(protected_thread_list[i]);
 
     // probably redundant?
     TaskScheduler::cleanup();

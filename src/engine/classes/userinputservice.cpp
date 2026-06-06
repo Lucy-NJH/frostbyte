@@ -22,7 +22,7 @@ namespace frostbyte {
 
 void genericFire(lua_State* L, std::shared_ptr<rbxInstance> instance, const char* event, std::function<int(void)> pushArgs) {
     pushFunctionFromLookup(L, fireRBXScriptSignal);
-    instance->pushEvent(L, event);
+    instance->pushSignal(L, event, true);
 
     lua_call(L, 1 + pushArgs(), 0);
 }
@@ -33,7 +33,7 @@ void genericFire(lua_State* L, std::shared_ptr<rbxInstance> instance, const char
 
 void genericFireInputObject(lua_State* L, std::shared_ptr<rbxInstance> instance, const char* event, std::shared_ptr<rbxInstance> input_object, bool game_processed) {
     pushFunctionFromLookup(L, fireRBXScriptSignal);
-    instance->pushEvent(L, event);
+    instance->pushSignal(L, event, true);
 
     lua_pushinstance(L, input_object);
     lua_pushboolean(L, game_processed);
@@ -644,7 +644,7 @@ void UserInputService::process(lua_State *L, bool anyImGui) {
                 } else if (event.state == InputEnded) {
                     if (getInstanceValue<bool>(clickable, "internal_CanActivate")) {
                         pushFunctionFromLookup(L, fireRBXScriptSignal);
-                        clickable->pushEvent(L, "Activated");
+                        clickable->pushSignal(L, "Activated", true);
 
                         lua_pushinstance(L, input_object);
                         lua_pushinteger(L, getInstanceValue<int32_t>(clickable, "internal_ActivateCount"));

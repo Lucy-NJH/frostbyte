@@ -22,7 +22,7 @@ void DataModel::onLoad(lua_State* L) {
     loaded = true;
 
     pushFunctionFromLookup(L, fireRBXScriptSignal);
-    instance->pushEvent(L, "Loaded");
+    instance->pushSignal(L, "Loaded", true);
 
     lua_call(L, 1, 0);
 }
@@ -55,7 +55,7 @@ void DataModel::onShutdown(lua_State* L) {
 
     // NOTE: Close is part of ServiceProvider not DataModel
     pushFunctionFromLookup(L, fireRBXScriptSignal);
-    instance->pushEvent(L, "Close");
+    instance->pushSignal(L, "Close", true);
 
     lua_call(L, 1, 0);
 }

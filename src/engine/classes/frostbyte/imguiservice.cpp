@@ -200,7 +200,7 @@ void ImGuiService_init(lua_State* L, std::shared_ptr<rbxInstance> datamodel) {
       .func = ImGuiService_methods::colorEdit
     };
 
-    _class->events.push_back("Render");
+    _class->events.push_back(rbxEvent{ .name = "Render" });
 
     rbxClass::class_map["ImGuiService"] = _class;
     ServiceProvider::registerService("ImGuiService");
@@ -210,7 +210,7 @@ void ImGuiService_init(lua_State* L, std::shared_ptr<rbxInstance> datamodel) {
 
 void ImGuiService_render(lua_State *L) {
     pushFunctionFromLookup(L, fireRBXScriptSignal);
-    ImGuiService->pushEvent(L, "Render");
+    ImGuiService->pushSignal(L, "Render", true);
 
     lua_call(L, 1, 0);
 }

@@ -5,6 +5,7 @@
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <queue>
 #include <shared_mutex>
 #include <stdexcept>
 #include <string>
@@ -57,6 +58,10 @@ struct rbxMethod {
     lua_CFunction func = nullptr;
     lua_Continuation cont = nullptr;
 };
+struct rbxEvent {
+    std::string name;
+    std::optional<std::string> route = std::nullopt;
+};
 
 class rbxInstance;
 class rbxValue;
@@ -77,7 +82,7 @@ public:
     std::shared_ptr<rbxClass> superclass;
     std::map<std::string, std::shared_ptr<rbxProperty>> properties;
     std::map<std::string, rbxMethod> methods;
-    std::vector<std::string> events;
+    std::vector<rbxEvent> events;
     std::function<void(lua_State* L, std::shared_ptr<rbxInstance> instance)> constructor = nullptr;
     std::function<void(rbxInstance*)> destructor = nullptr;
     std::function<void(rbxInstance*)> destructorLua = nullptr;
@@ -149,7 +154,7 @@ public:
     std::shared_ptr<rbxClass> _class;
     std::map<std::string, rbxValue> values;
     std::map<std::string, rbxMethod> methods;
-    std::vector<std::string> events;
+    std::map<std::string, rbxEvent*> events;
     std::vector<std::shared_ptr<rbxInstance>> children;
     std::map<std::string, rbxValueVariant> attributes;
 
@@ -163,14 +168,14 @@ public:
     // std::shared_mutex destroyed_mutex;
     // std::shared_mutex parent_locked_mutex;
 
-    // static lua_State* destructorL;
+    static lua_State* destructorL;
 
     rbxInstance(std::shared_ptr<rbxClass> _class);
     ~rbxInstance();
 
     bool isA(rbxClass* target_class);
     bool isA(const char* class_name);
-    int pushEvent(lua_State* L, const char* name);
+    int pushSignal(lua_State* L, const char* name, bool is_event, bool dont_create = false);
 
     rbxValueVariant& getValueVariant(const char* name);
     template<typename T>

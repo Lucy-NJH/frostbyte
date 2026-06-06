@@ -106,7 +106,7 @@ namespace rbxInstance_RunService_methods {
 
 void fireEventWithDelta(lua_State* L, const char* event, std::shared_ptr<rbxInstance>& instance, double delta) {
     pushFunctionFromLookup(L, fireRBXScriptSignal);
-    instance->pushEvent(L, event);
+    instance->pushSignal(L, event, true);
     lua_pushnumber(L, delta);
 
     lua_call(L, 2, 0);
