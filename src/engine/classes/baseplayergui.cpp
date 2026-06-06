@@ -8,6 +8,7 @@
 #include "engine/datatypes/udim2.hpp"
 
 #include "common.hpp"
+#include "ui/ui.hpp"
 
 #include "lua.h"
 #include "lualib.h"
@@ -171,7 +172,7 @@ void renderText(std::shared_ptr<rbxInstance> instance, const char* text, Vector2
     }
 }
 
-void renderGuiObject(lua_State* L, std::shared_ptr<rbxInstance> instance, Vector2 mouse, bool anyImGui) {
+void renderGuiObject(lua_State* L, std::shared_ptr<rbxInstance> instance, Vector2 mouse, Vector2 position_offset, bool anyImGui) {
     bool clips_descendants = false;
     std::optional<GuiObjectBorder> border_opt;
 
@@ -192,7 +193,7 @@ void renderGuiObject(lua_State* L, std::shared_ptr<rbxInstance> instance, Vector
 
         // FIXME: separate function for pos&size calculations that only get called on parent changed?
         // necessary so a newly-created guiobject's Absolute* values are accurate before render
-        auto parent_absolute_position = is_storage_child ? Vector2Zero : getInstanceValue<Vector2>(parent, "AbsolutePosition");
+        auto parent_absolute_position = is_storage_child ? position_offset : getInstanceValue<Vector2>(parent, "AbsolutePosition");
         auto parent_absolute_size = is_storage_child ? rbxCamera::screen_size : getInstanceValue<Vector2>(parent, "AbsoluteSize");
         // auto parent_absolute_rotation = is_storage_child ? 0.0f : getInstanceValue<float>(parent, "AbsoluteRotation");
 
@@ -326,8 +327,12 @@ void renderGuiObject(lua_State* L, std::shared_ptr<rbxInstance> instance, Vector
             return false;
         });
 
+        Vector2 position_offset = gui_inset_topleft;
+        if (instance->isA("ScreenGui") && instance->getValue<bool>("IgnoreGuiInset"))
+            position_offset = Vector2{0, menu_bar_height};
+
         for (size_t i = 0; i < sorted_children.size(); i++)
-            renderGuiObject(L, sorted_children[i], mouse, anyImGui);
+            renderGuiObject(L, sorted_children[i], mouse, position_offset, anyImGui);
 
         if (clips_descendants) {
             // FIXME: see above
@@ -394,7 +399,7 @@ void rbxInstance_BasePlayerGui_render(lua_State *L, bool anyImGui) {
 
     // render objects
     for (size_t i = 0; i < render_list.size(); i++)
-        renderGuiObject(L, render_list[i], mouse, anyImGui);
+        renderGuiObject(L, render_list[i], mouse, Vector2Zero, anyImGui);
 
     clickable_instance = next_clickable_instance;
     topmost_instance = next_topmost_instance;

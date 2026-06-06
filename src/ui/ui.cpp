@@ -4,6 +4,10 @@
 
 namespace frostbyte {
 
+float menu_bar_height = 0.f;
+Vector2 gui_inset_topleft{0.f, 58.f};
+Vector2 gui_inset_bottomright{0.f, 0.f};
+
 bool runservice_is_server = false;
 bool runservice_is_studio = false;
 

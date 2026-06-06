@@ -870,6 +870,7 @@ int main(int argc, char** argv) {
                 ImGui::EndMenu();
             }
 
+            menu_bar_height = ImGui::GetFrameHeight();
             ImGui::EndMainMenuBar();
         }
 

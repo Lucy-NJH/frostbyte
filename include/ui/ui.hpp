@@ -10,6 +10,10 @@
 
 namespace frostbyte {
 
+extern float menu_bar_height;
+extern Vector2 gui_inset_topleft;
+extern Vector2 gui_inset_bottomright;
+
 // window items
 
 extern bool runservice_is_server;
