@@ -11,11 +11,12 @@
 
 namespace frostbyte {
 
-int pushColor(lua_State* L, double r, double g, double b) {
+// FIXME: Roblox color values are floats not u8, so you can set them to like 500.2 or something and it will NOT become 255 it will stay that value
+int pushColor(lua_State* L, float r, float g, float b) {
     Color* color = static_cast<Color*>(lua_newuserdatatagged(L, sizeof(Color), userdata::Color3));
-    color->r = r;
-    color->g = g;
-    color->b = b;
+    color->r = static_cast<unsigned char>(r);
+    color->g = static_cast<unsigned char>(g);
+    color->b = static_cast<unsigned char>(b);
     color->a = 255;
 
     userdata::getClassMetatable(L, userdata::Color3);
@@ -28,11 +29,18 @@ int pushColor(lua_State* L, Color color) {
 }
 
 static int Color3_new(lua_State* L) {
-    const float r = luaL_optnumberrange(L, 1, 0, 1, "r");
-    const float g = luaL_optnumberrange(L, 2, 0, 1, "g");
-    const float b = luaL_optnumberrange(L, 3, 0, 1, "b");
+    // const float r = luaL_optnumberrange(L, 1, 0, 1, "r");
+    // const float g = luaL_optnumberrange(L, 2, 0, 1, "g");
+    // const float b = luaL_optnumberrange(L, 3, 0, 1, "b");
+    float r = luaL_optnumber(L, 1, 0);
+    float g = luaL_optnumber(L, 2, 0);
+    float b = luaL_optnumber(L, 3, 0);
 
-    return pushColor(L, r * 255.f, g * 255.f, b * 255.f);
+    if (r < 0) r = 0; else if (r <= 1) r *= 255.f;
+    if (g < 0) g = 0; else if (g <= 1) g *= 255.f;
+    if (b < 0) b = 0; else if (b <= 1) b *= 255.f;
+
+    return pushColor(L, r, g, b);
 }
 static int Color3_fromRGB(lua_State* L) {
     const float r = luaL_optnumberrange(L, 1, 0, 255, "r");

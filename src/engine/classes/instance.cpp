@@ -13,6 +13,7 @@
 #include "engine/classes/startergui.hpp"
 #include "engine/classes/textbox.hpp"
 #include "engine/classes/textservice.hpp"
+#include "engine/classes/textshared.hpp"
 #include "engine/classes/tweenbase.hpp"
 #include "engine/classes/tweenservice.hpp"
 #include "engine/classes/userinputservice.hpp"
@@ -1180,7 +1181,23 @@ int rbxInstance__newindex(lua_State* L) {
     const char* key = luaL_checkstring(L, 2);
     luaL_checkany(L, 3);
 
-    auto class_name = getInstanceValue<std::string>(instance, PROP_INSTANCE_CLASS_NAME);
+    {
+    bool hook_stopped = false;
+    {
+    rbxClass* c = instance->_class.get();
+    while (c) {
+        if (c->newindexHookPre) {
+            hook_stopped = c->newindexHookPre(L, instance, key);
+            if (hook_stopped)
+                break;
+        }
+        c = c->superclass.get();
+    }
+    }
+
+    if (hook_stopped)
+        goto SKIP;
+
     if (instance->values.find(key) == instance->values.end())
         goto INVALID_MEMBER;
 
@@ -1197,7 +1214,6 @@ int rbxInstance__newindex(lua_State* L) {
         goto INVALID_MEMBER;
 
     if (property->tags & rbxProperty::ReadOnly)
-        // luaL_error(L, "'%s' is a read-only member of %s", key, class_name.c_str());
         luaL_error(L, "Unable to assign property %s. Property is read only", key);
 
     switch (property->type_category) {
@@ -1330,6 +1346,7 @@ int rbxInstance__newindex(lua_State* L) {
 
     }
     }
+    }
 
     SKIP:
 
@@ -1337,6 +1354,7 @@ int rbxInstance__newindex(lua_State* L) {
 
     INVALID_MEMBER:
     auto name = getInstanceValue<std::string>(instance, PROP_INSTANCE_NAME);
+    auto class_name = getInstanceValue<std::string>(instance, PROP_INSTANCE_CLASS_NAME);
     luaL_error(L, "%s is not a valid member of %s \"%s\"", key, class_name.c_str(), name.c_str());
 };
 int rbxInstance__namecall(lua_State* L) {
@@ -1866,6 +1884,7 @@ void rbxInstanceSetup(lua_State* L, std::string api_dump) {
     rbxInstance_LayerCollector_init();
     rbxInstance_GuiObject_init();
     rbxInstance_TextBox_init();
+    rbxInstance_TextShared_init();
 
     rbxInstance_BasePlayerGui_init(L);
     rbxInstance_StarterGui_init(L);

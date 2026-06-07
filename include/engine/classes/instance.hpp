@@ -83,9 +83,12 @@ public:
     std::map<std::string, std::shared_ptr<rbxProperty>> properties;
     std::map<std::string, rbxMethod> methods;
     std::vector<rbxEvent> events;
+    // TODO: replace std::function with function pointers
     std::function<void(lua_State* L, std::shared_ptr<rbxInstance> instance)> constructor = nullptr;
     std::function<void(rbxInstance*)> destructor = nullptr;
     std::function<void(rbxInstance*)> destructorLua = nullptr;
+
+    bool (*newindexHookPre)(lua_State* L, std::shared_ptr<rbxInstance> instance, const char* property) = nullptr;
 
     void newMethod(const char* name, lua_CFunction func, lua_Continuation cont = nullptr) {
         rbxMethod method;

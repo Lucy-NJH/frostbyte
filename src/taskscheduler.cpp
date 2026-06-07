@@ -177,7 +177,7 @@ lua_State* TaskScheduler::newThread(lua_State* L, Feedback feedback, OnKill on_k
 
 void TaskScheduler::killThreadUnlocked(lua_State* thread) {
     Task* task = getTask(thread);
-    lua_unref(task->parent, task->ref);
+    lua_unref(lua_mainthread(thread), task->ref);
 
     // std::shared_lock thread_queue_lock(thread_queue_mutex);
 
