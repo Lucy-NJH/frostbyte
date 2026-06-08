@@ -73,3 +73,7 @@ That's it! To build again, simply run `./mate` just like before and it will dete
 * rbxl or rbxm parsing
 
 Contributions to nongoals may be welcome (ONLY AFTER THE PROJECT IS AT A MORE STABLE STATE), but they aren't something I will be focusing on.
+
+# LUAU
+frostbyte embeds [Luau](https://github.com/luau-lang/luau). See [luau_LICENSE.txt](luau_LICENSE.txt) for licensing information.
+![](repoassets/luau.svg)
