@@ -2,7 +2,9 @@
 
 #include <chrono>
 #include <fstream>
+#ifdef __linux__
 #include <unistd.h>
+#endif
 
 namespace frostbyte {
 

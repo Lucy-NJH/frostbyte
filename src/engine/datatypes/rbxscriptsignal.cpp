@@ -90,18 +90,26 @@ static int wait_proxy(lua_State* L) {
 
     return 0;
 }
+void internalConnect(lua_State* L, bool once) {
+    lua_checkrbxscriptsignal(L, 1);
+    luaL_checktype(L, 2, LUA_TFUNCTION);
+
+    pushNewRBXScriptConnection(L, 2);
+
+    pushSignalConnectionList(L, 1);
+    lua_pushvalue(L, -2);
+
+    lua_rawseti(L, -2, lua_objlen(L, -2) + 1);
+    lua_pop(L, 1);
+}
 namespace rbxScriptSignal_methods {
     static int connect(lua_State* L) {
-        lua_checkrbxscriptsignal(L, 1);
-        luaL_checktype(L, 2, LUA_TFUNCTION);
+        internalConnect(L, false);
 
-        pushNewRBXScriptConnection(L, 2);
-
-        pushSignalConnectionList(L, 1);
-        lua_pushvalue(L, -2);
-
-        lua_rawseti(L, -2, lua_objlen(L, -2) + 1);
-        lua_pop(L, 1);
+        return 1;
+    }
+    static int once(lua_State* L) {
+        internalConnect(L, true);
 
         return 1;
     }
@@ -128,6 +136,9 @@ lua_CFunction getrbxScriptSignalMethod(const char* key) {
         strequal(key, "ConnectParallel") || strequal(key, "connectParallel")
     )
         return rbxScriptSignal_methods::connect;
+    // TODO: is lowercase a real thing idk i just copied from wait
+    else if (strequal(key, "Once") || strequal(key, "once"))
+        return rbxScriptSignal_methods::once;
     else if (strequal(key, "Wait") || strequal(key, "wait"))
         return rbxScriptSignal_methods::wait;
 
@@ -216,6 +227,9 @@ int fireRBXScriptSignalWithFilter(lua_State* L) {
                 continue;
             }
         }
+
+        if (connection->once)
+            connection->destroy(L);
 
         for (int i = 0; i < arg_count; i++)
             lua_pushvalue(L, 2 + i);

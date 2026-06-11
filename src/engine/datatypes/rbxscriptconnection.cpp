@@ -35,9 +35,11 @@ void rbxScriptConnection::destroy(lua_State* L) {
     alive = false;
 }
 
-int pushNewRBXScriptConnection(lua_State* L, std::function<void()> pushValue) {
+int pushNewRBXScriptConnection(lua_State* L, std::function<void()> pushValue, bool once) {
     rbxScriptConnection* connection = static_cast<rbxScriptConnection*>(lua_newuserdatatagged(L, sizeof(rbxScriptConnection), userdata::RBXScriptConnection));
     new(connection) rbxScriptConnection();
+
+    connection->once = once;
 
     userdata::getClassMetatable(L, userdata::RBXScriptConnection);
     lua_setmetatable(L, -2);
@@ -67,11 +69,11 @@ int pushNewRBXScriptConnection(lua_State* L, std::function<void()> pushValue) {
 
     return 1;
 }
-int pushNewRBXScriptConnection(lua_State* L, int func_index) {
+int pushNewRBXScriptConnection(lua_State* L, int func_index, bool once) {
     func_index = lua_absindex(L, func_index);
     return pushNewRBXScriptConnection(L, [&L, &func_index] () {
         lua_pushvalue(L, func_index);
-    });
+    }, once);
 }
 
 rbxScriptConnection* lua_checkrbxscriptconnection(lua_State* L, int narg) {

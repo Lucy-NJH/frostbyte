@@ -9,7 +9,6 @@
 #include <initializer_list>
 #include <stdexcept>
 #include <sstream>
-#include <unistd.h>
 #include <vector>
 #include <sys/wait.h>
 
@@ -25,6 +24,9 @@ int ScriptLanguage::count = sizeof(ScriptLanguage::list) / sizeof(ScriptLanguage
 inline bool doesFileExist(const char* name) {
     std::string path = FileSystem::bin_path;
     path.append(name);
+    #ifdef __WIN32
+    path.append(".exe");
+    #endif
 
     return std::filesystem::exists(path);
 }
@@ -116,6 +118,9 @@ void ScriptLanguage::convert(std::string& code) {
 
     if (this == &ScriptLanguage::MoonScript) {
         executable.append("moonc");
+        #ifdef _WIN32
+        executable.append(".exe");
+        #endif
 
         run_process(executable.c_str(), { "-p", temp_path.c_str() }, exit_code, stdout);
 
@@ -125,6 +130,9 @@ void ScriptLanguage::convert(std::string& code) {
         code.assign(stdout);
     } else if (is_clue) {
         executable.append("clue");
+        #ifdef _WIN32
+        executable.append(".exe");
+        #endif
 
         run_process(executable.c_str(), { temp_path.c_str(), "-D", "-t", "Lua51", "-o" }, exit_code, stdout);
 
