@@ -1,18 +1,1 @@
-[submodule "dependencies/Luau"]
-	path = dependencies/Luau
-	url = https://github.com/luau-lang/luau.git
-[submodule "dependencies/rlImGui"]
-	path = dependencies/rlImGui
-	url = https://github.com/raylib-extras/rlImGui.git
-[submodule "dependencies/json"]
-	path = dependencies/json
-	url = https://github.com/nlohmann/json
-[submodule "dependencies/curl"]
-	path = dependencies/curl
-	url = https://github.com/curl/curl
-[submodule "dependencies/ImGuiFileDialog"]
-	path = dependencies/ImGuiFileDialog
-	url = https://github.com/aiekick/ImGuiFileDialog.git
-[submodule "dependencies/uuid_v4"]
-	path = dependencies/uuid_v4
-	url = https://github.com/crashoz/uuid_v4.git
+
