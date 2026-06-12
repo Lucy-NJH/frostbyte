@@ -19,24 +19,24 @@ int main() {
     AddFile(lib, "./src/engine/classes/frostbyte/*.cpp");
     AddFile(lib, "./src/engine/datatypes/*.cpp");
 
-    AddIncludePaths(lib, "./dependencies/Luau/Analysis/include");
-    AddIncludePaths(lib, "./dependencies/Luau/Ast/include");
-    AddIncludePaths(lib, "./dependencies/Luau/Common/include");
-    AddIncludePaths(lib, "./dependencies/Luau/Compiler/include");
-    AddIncludePaths(lib, "./dependencies/Luau/Config/include");
-    AddIncludePaths(lib, "./dependencies/Luau/VM/include");
-    AddIncludePaths(lib, "./dependencies/Luau/VM/src");
+    AddIncludePaths(lib, "./dependencies/luau/Analysis/include");
+    AddIncludePaths(lib, "./dependencies/luau/Ast/include");
+    AddIncludePaths(lib, "./dependencies/luau/Common/include");
+    AddIncludePaths(lib, "./dependencies/luau/Compiler/include");
+    AddIncludePaths(lib, "./dependencies/luau/Config/include");
+    AddIncludePaths(lib, "./dependencies/luau/VM/include");
+    AddIncludePaths(lib, "./dependencies/luau/VM/src");
 
-    // AddIncludePaths(lib, "../rlImGui");
-    AddIncludePaths(lib, "../rlImGui/raylib-master/src");
-    AddIncludePaths(lib, "../rlImGui/imgui-master");
+    // AddIncludePaths(lib, "../../rlImGui");
+    AddIncludePaths(lib, "../../rlImGui/raylib-master/src");
+    AddIncludePaths(lib, "../../rlImGui/imgui-master");
 
     // LinkSystemLibraries(lib, "m", "stdc++", "raylib", "X11");
 
     AddLibraryPaths(lib, "./dependencies/luau/cmake");
     // LinkSystemLibraries(lib, "Luau");
 
-    AddLibraryPaths(lib, "../rlImGui/bin/Release");
+    AddLibraryPaths(lib, "../../rlImGui/bin/Release");
     // LinkSystemLibraries(lib, "rlImGui");
 
     AddLibraryPaths(lib, "./dependencies/curl/cmake/lib");
