@@ -10,7 +10,7 @@ int main() {
     };
     StaticLib lib = CreateStaticLib(lib_options);
 
-    AddIncludePaths(lib, "./include", "./dependencies/json/include", "./dependencies/curl/include", "./dependencies/simde", "./dependencies/uuid_v4", "./dependencies/ImGuiFileDialog");
+    AddIncludePaths(lib, "./include", "./dependencies/json/include", "./dependencies/curl/include", "./dependencies/uuid_v4");
 
     AddFile(lib, "./src/*.cpp");
     AddFile(lib, "./src/libraries/*.cpp");
@@ -33,16 +33,16 @@ int main() {
 
     // LinkSystemLibraries(lib, "m", "stdc++", "raylib", "X11");
 
-    AddLibraryPaths(lib, "./dependencies/Luau/cmake");
+    AddLibraryPaths(lib, "./dependencies/luau/cmake");
     // LinkSystemLibraries(lib, "Luau");
 
-    AddLibraryPaths(lib, "./dependencies/rlImGui/bin/Release");
+    AddLibraryPaths(lib, "../rlImGui/bin/Release");
     // LinkSystemLibraries(lib, "rlImGui");
 
     AddLibraryPaths(lib, "./dependencies/curl/cmake/lib");
     // LinkSystemLibraries(lib, "curl");
 
-    AddLibraryPaths(lib, "./dependencies/ImGuiFileDialog/cmake");
+    // AddLibraryPaths(lib, "./dependencies/ImGuiFileDialog/cmake");
     // LinkSystemLibraries(lib, "ImGuiFileDialog");
 
     InstallStaticLib(lib);
