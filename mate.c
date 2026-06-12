@@ -4,48 +4,48 @@
 int main() {
     StartBuild();
 
-    ExecutableOptions executable_options = {
-        .output = "frostbyte",
-        .flags = "-std=c++17 -Wall -Wno-psabi -Werror -g -march=native -static-libstdc++ -static-libgcc"
+    StaticLibOptions lib_options = {
+        .output = "libfrostbyte",
+        .flags = "-std=c++17 -Wall -Werror -g -march=native -static-libstdc++ -static-libgcc -fPIC"
     };
-    Executable executable = CreateExecutable(executable_options);
+    StaticLib lib = CreateStaticLib(lib_options);
 
-    AddIncludePaths(executable, "./include", "./dependencies/json/include", "./dependencies/curl/include", "./dependencies/simde", "./dependencies/uuid_v4", "./dependencies/ImGuiFileDialog");
+    AddIncludePaths(lib, "./include", "./dependencies/json/include", "./dependencies/curl/include", "./dependencies/simde", "./dependencies/uuid_v4", "./dependencies/ImGuiFileDialog");
 
-    AddFile(executable, "./src/*.cpp");
-    AddFile(executable, "./src/libraries/*.cpp");
-    AddFile(executable, "./src/ui/*.cpp");
-    AddFile(executable, "./src/engine/classes/*.cpp");
-    AddFile(executable, "./src/engine/classes/frostbyte/*.cpp");
-    AddFile(executable, "./src/engine/datatypes/*.cpp");
+    AddFile(lib, "./src/*.cpp");
+    AddFile(lib, "./src/libraries/*.cpp");
+    AddFile(lib, "./src/ui/*.cpp");
+    AddFile(lib, "./src/engine/classes/*.cpp");
+    AddFile(lib, "./src/engine/classes/frostbyte/*.cpp");
+    AddFile(lib, "./src/engine/datatypes/*.cpp");
 
-    AddIncludePaths(executable, "./dependencies/Luau/Analysis/include");
-    AddIncludePaths(executable, "./dependencies/Luau/Ast/include");
-    AddIncludePaths(executable, "./dependencies/Luau/Common/include");
-    AddIncludePaths(executable, "./dependencies/Luau/Compiler/include");
-    AddIncludePaths(executable, "./dependencies/Luau/Config/include");
-    AddIncludePaths(executable, "./dependencies/Luau/VM/include");
-    AddIncludePaths(executable, "./dependencies/Luau/VM/src");
+    AddIncludePaths(lib, "./dependencies/Luau/Analysis/include");
+    AddIncludePaths(lib, "./dependencies/Luau/Ast/include");
+    AddIncludePaths(lib, "./dependencies/Luau/Common/include");
+    AddIncludePaths(lib, "./dependencies/Luau/Compiler/include");
+    AddIncludePaths(lib, "./dependencies/Luau/Config/include");
+    AddIncludePaths(lib, "./dependencies/Luau/VM/include");
+    AddIncludePaths(lib, "./dependencies/Luau/VM/src");
 
-    AddIncludePaths(executable, "./dependencies/rlImGui");
-    AddIncludePaths(executable, "./dependencies/rlImGui/raylib-master/src");
-    AddIncludePaths(executable, "./dependencies/rlImGui/imgui-master");
+    AddIncludePaths(lib, "./dependencies/rlImGui");
+    AddIncludePaths(lib, "./dependencies/rlImGui/raylib-master/src");
+    AddIncludePaths(lib, "./dependencies/rlImGui/imgui-master");
 
-    LinkSystemLibraries(executable, "m", "stdc++", "raylib", "X11");
+    // LinkSystemLibraries(lib, "m", "stdc++", "raylib", "X11");
 
-    AddLibraryPaths(executable, "./dependencies/Luau/cmake");
-    LinkSystemLibraries(executable, "Luau");
+    AddLibraryPaths(lib, "./dependencies/Luau/cmake");
+    // LinkSystemLibraries(lib, "Luau");
 
-    AddLibraryPaths(executable, "./dependencies/rlImGui/bin/Release");
-    LinkSystemLibraries(executable, "rlImGui");
+    AddLibraryPaths(lib, "./dependencies/rlImGui/bin/Release");
+    // LinkSystemLibraries(lib, "rlImGui");
 
-    AddLibraryPaths(executable, "./dependencies/curl/cmake/lib");
-    LinkSystemLibraries(executable, "curl");
+    AddLibraryPaths(lib, "./dependencies/curl/cmake/lib");
+    // LinkSystemLibraries(lib, "curl");
 
-    AddLibraryPaths(executable, "./dependencies/ImGuiFileDialog/cmake");
-    LinkSystemLibraries(executable, "ImGuiFileDialog");
+    AddLibraryPaths(lib, "./dependencies/ImGuiFileDialog/cmake");
+    // LinkSystemLibraries(lib, "ImGuiFileDialog");
 
-    InstallExecutable(executable);
+    InstallStaticLib(lib);
 
     EndBuild();
     return 0;
