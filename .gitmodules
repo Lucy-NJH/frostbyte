@@ -1,1 +1,4 @@
 
+[submodule "dependencies"]
+	path = dependencies
+	url = https://github.com/frostbyte-engine/frostbyte-dependencies.git
