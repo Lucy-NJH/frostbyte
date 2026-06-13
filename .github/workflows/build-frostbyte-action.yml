@@ -49,8 +49,6 @@ jobs:
 
             popd
           fi
-      - name: build frostbyte
-        run: cd frostbyte && gcc -o mate mate.c && ./mate ../../frostbyte-desktop/dependencies/rlImGui
       - name: build frostbyte-desktop dependencies
         run: |
           if [ ! -f "dependencies/built.txt" ]; then
@@ -65,6 +63,8 @@ jobs:
 
             popd
           fi
+      - name: build frostbyte
+        run: cd frostbyte && gcc -o mate mate.c && ./mate ../frostbyte-desktop/dependencies/rlImGui
       - name: build frostbyte-desktop
         run: cd frostbyte-desktop && gcc -o mate mate.c && ./mate ../frostbyte
       - name: create timestamp
