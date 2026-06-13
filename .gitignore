@@ -1,5 +1,3 @@
-build
 imgui.ini
 .test_success
-mate
-__pycache__
+__pycache__/
