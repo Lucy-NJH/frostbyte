@@ -9,7 +9,10 @@ jobs:
       - name: cache for dependencies
         uses: actions/cache@v4
         with:
-          path: dependencies
+          path: frostbyte/dependencies
+          key: ${{ runner.os}}-dependencies-${{ hashFiles('dependenciesver.txt') }}
+        with:
+          path: frostbyte-desktop/dependencies
           key: ${{ runner.os}}-dependencies-${{ hashFiles('dependenciesver.txt') }}
       - name: install system packages
         run: |
