@@ -29,6 +29,7 @@ bool menu_image_explorer_open = false;
 bool menu_font_explorer_open = false;
 bool menu_table_explorer_open = false;
 
+#ifndef FROSTBYTE_HEADLESS
 int imgui_inputTextCallback(ImGuiInputTextCallbackData* data) {
     if (data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
         std::string* str = (std::string*) data->UserData;
@@ -145,5 +146,6 @@ void ImGui_ScriptLanguageCombo(ScriptLanguage** language) {
             *language = &ScriptLanguage::Luau;
     }
 }
+#endif
 
 }; // namespace frostbyte

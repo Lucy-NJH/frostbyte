@@ -160,11 +160,13 @@ void rbxInstance_RunService_init(lua_State* L) {
     lua_newtable(L);
     lua_rawsetfield(L, LUA_REGISTRYINDEX, BINDLIST_KEY);
 
-    rbxClass::class_map["RunService"]->methods["BindToRenderStep"].func = rbxInstance_RunService_methods::bindToRenderStep;
-    rbxClass::class_map["RunService"]->methods["IsClient"].func = rbxInstance_RunService_methods::isClient;
-    rbxClass::class_map["RunService"]->methods["IsServer"].func = rbxInstance_RunService_methods::isServer;
-    rbxClass::class_map["RunService"]->methods["IsStudio"].func = rbxInstance_RunService_methods::isStudio;
-    rbxClass::class_map["RunService"]->methods["UnbindFromRenderStep"].func = rbxInstance_RunService_methods::unbindFromRenderStep;
+    auto& this_class = rbxClass::class_map.at("RunService");
+
+    this_class->methods.at("BindToRenderStep").func = rbxInstance_RunService_methods::bindToRenderStep;
+    this_class->methods.at("IsClient").func = rbxInstance_RunService_methods::isClient;
+    this_class->methods.at("IsServer").func = rbxInstance_RunService_methods::isServer;
+    this_class->methods.at("IsStudio").func = rbxInstance_RunService_methods::isStudio;
+    this_class->methods.at("UnbindFromRenderStep").func = rbxInstance_RunService_methods::unbindFromRenderStep;
 }
 
 }; // namespace frostbyte

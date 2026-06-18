@@ -1,4 +1,5 @@
 #include "ui/fontexplorer.hpp"
+#ifndef FROSTBYTE_HEADLESS
 
 #include "fontloader.hpp"
 #include "imgui.h"
@@ -67,3 +68,5 @@ void UI_FontExplorer_cleanup() {
 }
 
 }; // namespace frostbyte
+
+#endif

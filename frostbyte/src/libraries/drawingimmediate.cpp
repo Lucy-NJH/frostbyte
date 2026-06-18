@@ -1,4 +1,5 @@
 #include "libraries/drawingimmediate.hpp"
+#ifndef FROSTBYTE_HEADLESS
 
 #include "common.hpp"
 #include "basedrawing.hpp"
@@ -236,3 +237,5 @@ void render_drawingimmediate(lua_State* L) {
 }
 
 }; // namespace frostbyte
+
+#endif

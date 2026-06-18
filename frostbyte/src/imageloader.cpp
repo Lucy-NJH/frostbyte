@@ -1,4 +1,5 @@
 #include "imageloader.hpp"
+#ifndef FROSTBYTE_HEADLESS
 #include "common.hpp"
 
 namespace frostbyte {
@@ -47,3 +48,5 @@ void ImageLoader::unload() {
 }
 
 }; // namespace fakerobox
+
+#endif

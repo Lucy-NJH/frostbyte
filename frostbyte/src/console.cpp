@@ -1,6 +1,8 @@
 #include "console.hpp"
+
+#ifndef FROSTBYTE_HEADLESS
 #include "imgui.h"
-#include "raylib.h"
+#endif
 
 #include <cstdarg>
 
@@ -12,10 +14,10 @@ Console::Console(ConsoleId id, bool show_info, bool show_warning, bool show_erro
 Console Console::ScriptConsole(Script);
 Console Console::TestsConsole(Tests, true, true, true, true);
 
-ImVec4 Console::ColorINFO = {1, 1, 1, 1};
-ImVec4 Console::ColorWARNING = {1, 1, 0, 1};
-ImVec4 Console::ColorERROR = {1, 0, 0, 1};
-ImVec4 Console::ColorDEBUG = {1, 0, 1, 1};
+Vector4 Console::ColorINFO = {1, 1, 1, 1};
+Vector4 Console::ColorWARNING = {1, 1, 0, 1};
+Vector4 Console::ColorERROR = {1, 0, 0, 1};
+Vector4 Console::ColorDEBUG = {1, 0, 1, 1};
 
 const char* Console::getMessageTypeString(Message::Type type) {
     switch (type) {
@@ -37,11 +39,12 @@ void Console::clear() {
 }
 
 void Console::renderMessages() {
+    #ifndef FROSTBYTE_HEADLESS
     std::shared_lock lock(mutex);
     for (size_t i = 0; i < messages.size(); i++) {
         bool skip = false;
         auto& message = messages[i];
-        ImVec4 color;
+        Vector4 color;
         switch (message.type) {
             case Console::Message::INFO:
                 skip = !show_info;
@@ -75,7 +78,7 @@ void Console::renderMessages() {
         std::string popupid = "consolepopup";
         popupid.append(std::to_string(i));
 
-        ImGui::TextColored(color, "%.*s", static_cast<int>(size), content.c_str());
+        ImGui::TextColored(ImVec4(color.x, color.y, color.z, color.w), "%.*s", static_cast<int>(size), content.c_str());
         if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
             ImGui::OpenPopup(ImGui::GetID(popupid.c_str()));
 
@@ -91,6 +94,7 @@ void Console::renderMessages() {
             ImGui::EndPopup();
         }
     }
+    #endif
 }
 // NOTE: not thread-safe
 std::string& Console::getWholeContent() {

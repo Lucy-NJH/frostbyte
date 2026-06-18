@@ -1,5 +1,7 @@
 #pragma once
 
+#ifndef FROSTBYTE_HEADLESS
+
 #include <shared_mutex>
 #include <string>
 #include <vector>
@@ -164,3 +166,5 @@ void open_drawentrylib(lua_State* L);
 int fr_isrenderobject(lua_State* L);
 
 }; // namespace frostbyte
+
+#endif

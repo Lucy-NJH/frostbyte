@@ -1,4 +1,5 @@
 #include "ui/functionexplorer.hpp"
+#ifndef FROSTBYTE_HEADLESS
 #include "ui/tableexplorer.hpp"
 #include "ui/ui.hpp"
 
@@ -50,14 +51,11 @@ void UI_FunctionExplorer_init(lua_State* L, std::shared_ptr<rbxInstance> datamod
     auto FunctionExplorer = std::make_shared<rbxClass>();
     FunctionExplorer->name.assign("FunctionExplorer");
     FunctionExplorer->tags |= rbxClass::NotCreatable;
-    FunctionExplorer->superclass = rbxClass::class_map["Instance"];
+    FunctionExplorer->superclass = rbxClass::class_map.at("Instance");
 
-    FunctionExplorer->methods["SelectFunction"] = {
-      .name = "SelectFunction",
-      .func = UI_FunctionExplorer_methods::selectFunction
-    };
+    FunctionExplorer->newMethod("SelectFunction", UI_FunctionExplorer_methods::selectFunction);
 
-    rbxClass::class_map["FunctionExplorer"] = FunctionExplorer;
+    rbxClass::class_map.try_emplace("FunctionExplorer", FunctionExplorer);
     ServiceProvider::registerService("FunctionExplorer");
 
     ServiceProvider::createService(L, datamodel, "FunctionExplorer");
@@ -249,3 +247,5 @@ void UI_FunctionExplorer_render(lua_State *L) {
 }
 
 }; // namespace frostbyte
+
+#endif

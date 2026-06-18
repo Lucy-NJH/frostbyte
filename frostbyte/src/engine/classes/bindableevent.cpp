@@ -20,7 +20,9 @@ namespace rbxInstance_BindableEvent_methods {
 };
 
 void rbxInstance_BindableEvent_init() {
-    rbxClass::class_map["BindableEvent"]->methods.at("Fire").func = rbxInstance_BindableEvent_methods::fire;
+    auto& this_class = rbxClass::class_map.at("BindableEvent");
+
+    this_class->methods.at("Fire").func = rbxInstance_BindableEvent_methods::fire;
 }
 
 }; // namespace frostbyte

@@ -46,8 +46,10 @@
 #include "sysutils.hpp"
 
 #include "curl/curl.h"
+#ifndef FROSTBYTE_HEADLESS
 #include "raylib.h"
 #include "imgui.h"
+#endif
 
 #include "common.hpp"
 #include "basedrawing.hpp"
@@ -79,7 +81,9 @@ std::string readFileToString(const char* file_path) {
     return result;
 }
 
+#ifndef FROSTBYTE_HEADLESS
 Shader round_shader;
+#endif
 
 bool Frostbyte::running = false;
 
@@ -159,11 +163,13 @@ void Frostbyte::initialize(FrostbyteConfiguration configuration) {
 
     open_frostbyte_environment(L);
 
+    #ifndef FROSTBYTE_HEADLESS
     if (!configuration.initializeWindow)
         throw new std::runtime_error("please provide a valid initializeWindow callback");
     if (!configuration.cleanupWindow)
         throw new std::runtime_error("please provide a valid cleanupWindow callback");
     configuration.initializeWindow();
+    #endif
 
     FontLoader::load();
 
@@ -173,7 +179,9 @@ void Frostbyte::initialize(FrostbyteConfiguration configuration) {
     open_colorsequencekeypointlib(L);
     open_colorsequencelib(L);
     open_contentlib(L);
+    #ifndef FROSTBYTE_HEADLESS
     open_fontlib(L);
+    #endif
     open_tasklib(L);
     open_tweeninfolib(L);
     open_numberrangelib(L);
@@ -197,11 +205,13 @@ void Frostbyte::initialize(FrostbyteConfiguration configuration) {
     open_instructionlib(L);
     open_cachelib(L);
     open_cryptlib(L);
+    #ifndef FROSTBYTE_HEADLESS
     UI_FunctionExplorer_init(L, DataModel::instance);
     ImGuiService_init(L, DataModel::instance);
 
     open_drawentrylib(L);
     open_drawingimmediate(L);
+    #endif
 
     lua_newtable(L);
     lua_setglobal(L, "shared");
@@ -215,6 +225,7 @@ void Frostbyte::initialize(FrostbyteConfiguration configuration) {
     lua_singlestep(L, true); // needed for stephook
 
     // load round shader
+    #ifndef FROSTBYTE_HEADLESS
     {
         std::string base_path = FileSystem::home_path;
         base_path.append("assets/base.vs");
@@ -241,6 +252,7 @@ void Frostbyte::initialize(FrostbyteConfiguration configuration) {
 
     default_imgui_style = ImGui::GetStyle();
     changeImGuiTheme(imgui_theme);
+    #endif
 
     DataModel::onLoad(L);
 
@@ -250,6 +262,7 @@ void Frostbyte::cleanup(bool restart) {
     DataModel::onShutdown(appL);
     running = false;
 
+    #ifndef FROSTBYTE_HEADLESS
     UnloadShader(round_shader);
 
     for (auto& entry : DrawEntry::draw_list)
@@ -260,6 +273,7 @@ void Frostbyte::cleanup(bool restart) {
     ImageLoader::unload();
     // NOTE: we already check for the existance of cleanupWindow when checking for initializeWindow
     configuration.cleanupWindow();
+    #endif
 
     rbxInstanceCleanup(appL);
     rbxScriptSignal::cleanup();
@@ -277,23 +291,28 @@ void Frostbyte::cleanup(bool restart) {
 }
 
 void Frostbyte::preRender() {
+    #ifndef FROSTBYTE_HEADLESS
     UserInputService::any_imgui = ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow);
     if (enable_user_input_service)
         UserInputService::process(appL);
+    #endif
     if (enable_run_service)
         RunService::process(appL);
     if (enable_tween_service)
         TweenService::process(appL);
 
+    #ifndef FROSTBYTE_HEADLESS
     int screen_width = GetScreenWidth();
     int screen_height = GetScreenHeight();
     rbxCamera::screen_size.x = screen_width;
     rbxCamera::screen_size.y = screen_height;
+    #endif
 
     // camera
     rbxInstance_Camera_updateViewport(appL);
 }
 void Frostbyte::beginRender() {
+    #ifndef FROSTBYTE_HEADLESS
     BeginDrawing();
     ClearBackground(DARKGRAY);
 
@@ -304,12 +323,15 @@ void Frostbyte::beginRender() {
     // lua drawings
     DrawEntry::render();
     render_drawingimmediate(appL);
+    #endif
 }
 void Frostbyte::endRender() {
+    #ifndef FROSTBYTE_HEADLESS
     if (show_fps)
         DrawFPS(30, 30);
 
     EndDrawing();
+    #endif
 }
 void Frostbyte::postRender() {
     TaskScheduler::run();

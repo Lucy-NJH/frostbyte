@@ -33,7 +33,7 @@ static int tweenProperties(lua_State* L, UDim2* position, UDim2* size) {
     // TODO: access the c function directly
     auto game = DataModel::instance;
     auto tween_service = ServiceProvider::getService(L, game, "TweenService");
-    lua_pushcfunction(L, tween_service->methods["Create"].func, "Create");
+    lua_pushcfunction(L, tween_service->methods.at("Create").func, "Create");
 
     lua_pushinstance(L, tween_service);
     lua_pushvalue(L, 1);
@@ -85,11 +85,11 @@ namespace rbxInstance_GuiObject_methods {
 }; // namespace rbxInstance_GuiObject_methods
 
 void rbxInstance_GuiObject_init() {
-    auto& this_class = rbxClass::class_map["GuiObject"];
+    auto& this_class = rbxClass::class_map.at("GuiObject");
 
-    this_class->methods["TweenPosition"].func = rbxInstance_GuiObject_methods::tweenPosition;
-    this_class->methods["TweenSize"].func = rbxInstance_GuiObject_methods::tweenSize;
-    this_class->methods["TweenSizeAndPosition"].func = rbxInstance_GuiObject_methods::tweenSizeAndPosition;
+    this_class->methods.at("TweenPosition").func = rbxInstance_GuiObject_methods::tweenPosition;
+    this_class->methods.at("TweenSize").func = rbxInstance_GuiObject_methods::tweenSize;
+    this_class->methods.at("TweenSizeAndPosition").func = rbxInstance_GuiObject_methods::tweenSizeAndPosition;
 
     this_class->constructor = [](lua_State* L, std::shared_ptr<rbxInstance> instance) {
         setInstanceValue(instance, L, "BackgroundColor3", Color { 163, 162, 165, 255 }, true);

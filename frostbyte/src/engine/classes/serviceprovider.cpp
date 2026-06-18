@@ -58,8 +58,10 @@ namespace rbxInstance_ServiceProvider_methods {
 };
 
 void rbxInstance_ServiceProvider_init(lua_State *L) {
-    rbxClass::class_map["ServiceProvider"]->methods.at("FindService").func = rbxInstance_ServiceProvider_methods::findService;
-    rbxClass::class_map["ServiceProvider"]->methods.at("GetService").func = rbxInstance_ServiceProvider_methods::getService;
+    auto& this_class = rbxClass::class_map.at("ServiceProvider");
+
+    this_class->methods.at("FindService").func = rbxInstance_ServiceProvider_methods::findService;
+    this_class->methods.at("GetService").func = rbxInstance_ServiceProvider_methods::getService;
   
 }
 

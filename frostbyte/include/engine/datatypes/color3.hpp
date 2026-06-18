@@ -1,6 +1,6 @@
 #pragma once
 
-#include "raylib.h"
+#include "renderstubs.hpp"
 
 #include "lua.h"
 

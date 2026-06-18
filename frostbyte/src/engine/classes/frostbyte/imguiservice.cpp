@@ -7,7 +7,9 @@
 #include "engine/classes/instance.hpp"
 #include "engine/classes/serviceprovider.hpp"
 
+#ifndef FROSTBYTE_HEADLESS
 #include "imgui.h"
+#endif
 
 #include "lapi.h"
 #include "lobject.h"
@@ -19,6 +21,74 @@
 namespace frostbyte {
 
 namespace ImGuiService_methods {
+    #ifdef FROSTBYTE_HEADLESS
+    static int begin(lua_State* L) {
+        luaL_checkstring(L, 1);
+        lua_optinstance(L, 2, "BoolValue");
+
+        lua_pushboolean(L, false);
+        return 1;
+    }
+    static int end(lua_State* L) {
+        return 0;
+    }
+
+    static int text(lua_State* L) {
+        luaL_checkstring(L, 1);
+        return 0;
+    }
+
+    static int button(lua_State* L) {
+        luaL_checkstring(L, 1);
+
+        lua_pushboolean(L, false);
+        return 1;
+    }
+    static int checkbox(lua_State* L) {
+        luaL_checkstring(L, 1);
+        lua_checkinstance(L, 2, "BoolValue");
+
+        lua_pushboolean(L, false);
+        return 1;
+    }
+    static int bullet(lua_State* L) {
+        return 0;
+    }
+
+    static int beginCombo(lua_State* L) {
+        luaL_checkstring(L, 1);
+
+        lua_pushboolean(L, false);
+        return 1;
+    }
+    static int endCombo(lua_State* L) {
+        return 0;
+    }
+    static int combo(lua_State* L) {
+        luaL_checkstring(L, 1);
+        lua_checkinstance(L, 2, "IntValue");
+        luaL_checktype(L, 3, LUA_TTABLE);
+
+        lua_pushboolean(L, false);
+        return 1;
+    }
+
+    static int inputText(lua_State* L) {
+        luaL_checkstring(L, 1);
+        lua_checkinstance(L, 2, "StringValue");
+
+        lua_pushboolean(L, false);
+        return 1;
+    }
+
+    static int colorEdit(lua_State* L) {
+        luaL_checkstring(L, 1);
+        lua_checkinstance(L, 2, "Color3Value");
+
+        lua_pushboolean(L, false);
+        return 1;
+    }
+    #else
     static int begin(lua_State* L) {
         const char* str = luaL_checkstring(L, 1);
         std::shared_ptr<rbxInstance> boolvalue = lua_optinstance(L, 2, "BoolValue");
@@ -140,6 +210,7 @@ namespace ImGuiService_methods {
         lua_pushboolean(L, changed);
         return 1;
     }
+    #endif
 }
 
 std::shared_ptr<rbxInstance> ImGuiService;
@@ -148,61 +219,28 @@ void ImGuiService_init(lua_State* L, std::shared_ptr<rbxInstance> datamodel) {
     auto _class = std::make_shared<rbxClass>();
     _class->name.assign("ImGuiService");
     _class->tags |= rbxClass::NotCreatable;
-    _class->superclass = rbxClass::class_map["Instance"];
+    _class->superclass = rbxClass::class_map.at("Instance");
 
-    _class->methods["Begin"] = {
-      .name = "Begin",
-      .func = ImGuiService_methods::begin
-    };
-    _class->methods["End"] = {
-      .name = "End",
-      .func = ImGuiService_methods::end
-    };
+    _class->newMethod("Begin", ImGuiService_methods::begin);
+    _class->newMethod("End", ImGuiService_methods::end);
 
-    _class->methods["Text"] = {
-      .name = "Text",
-      .func = ImGuiService_methods::text
-    };
+    _class->newMethod("Text", ImGuiService_methods::text);
 
-    _class->methods["Button"] = {
-      .name = "Button",
-      .func = ImGuiService_methods::button
-    };
-    _class->methods["Checkbox"] = {
-      .name = "Checkbox",
-      .func = ImGuiService_methods::checkbox
-    };
-    _class->methods["Bullet"] = {
-      .name = "Bullet",
-      .func = ImGuiService_methods::bullet
-    };
+    _class->newMethod("Button", ImGuiService_methods::button);
+    _class->newMethod("Checkbox", ImGuiService_methods::checkbox);
+    _class->newMethod("Bullet", ImGuiService_methods::bullet);
 
-    _class->methods["BeginCombo"] = {
-      .name = "BeginCombo",
-      .func = ImGuiService_methods::beginCombo
-    };
-    _class->methods["EndCombo"] = {
-      .name = "EndCombo",
-      .func = ImGuiService_methods::endCombo
-    };
-    _class->methods["Combo"] = {
-      .name = "Combo",
-      .func = ImGuiService_methods::combo
-    };
+    _class->newMethod("BeginCombo", ImGuiService_methods::beginCombo);
+    _class->newMethod("EndCombo", ImGuiService_methods::endCombo);
+    _class->newMethod("Combo", ImGuiService_methods::combo);
 
-    _class->methods["InputText"] = {
-      .name = "InputText",
-      .func = ImGuiService_methods::inputText
-    };
+    _class->newMethod("InputText", ImGuiService_methods::inputText);
 
-    _class->methods["ColorEdit"] = {
-      .name = "ColorEdit",
-      .func = ImGuiService_methods::colorEdit
-    };
+    _class->newMethod("ColorEdit", ImGuiService_methods::colorEdit);
 
     _class->events.push_back(rbxEvent{ .name = "Render" });
 
-    rbxClass::class_map["ImGuiService"] = _class;
+    rbxClass::class_map.try_emplace("ImGuiService", _class);
     ServiceProvider::registerService("ImGuiService");
 
     ImGuiService = ServiceProvider::getService(L, datamodel, "ImGuiService");

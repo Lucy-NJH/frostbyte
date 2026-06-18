@@ -17,13 +17,17 @@ bool newindexHookPre(lua_State* L, std::shared_ptr<rbxInstance> instance, const 
 }
 
 void rbxInstance_TextShared_init() {
-    assert(!rbxClass::class_map["TextButton"]->newindexHookPre);
-    assert(!rbxClass::class_map["TextBox"]->newindexHookPre);
-    assert(!rbxClass::class_map["TextLabel"]->newindexHookPre);
+    auto& text_button = rbxClass::class_map.at("TextButton");
+    auto& text_box = rbxClass::class_map.at("TextBox");
+    auto& text_label = rbxClass::class_map.at("TextLabel");
 
-    rbxClass::class_map["TextButton"]->newindexHookPre = newindexHookPre;
-    rbxClass::class_map["TextBox"]->newindexHookPre = newindexHookPre;
-    rbxClass::class_map["TextLabel"]->newindexHookPre = newindexHookPre;
+    assert(!text_button->newindexHookPre);
+    assert(!text_box->newindexHookPre);
+    assert(!text_label->newindexHookPre);
+
+    text_button->newindexHookPre = newindexHookPre;
+    text_box->newindexHookPre = newindexHookPre;
+    text_label->newindexHookPre = newindexHookPre;
 }
 
 }; // namespace frostbyte

@@ -10,5 +10,5 @@ game:GetService("RunService").RenderStepped:Connect(function(dt)
 el += dt
 a.Radius = 60 + 40 * math.sin(el)
 a.Color = Color3.fromHSV(el / 10, 1, 1)
-a.Transparency = el % 1
+a.Transparency = (math.sin(el * 4) + 1) * 0.5
 end)

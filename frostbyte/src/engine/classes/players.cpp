@@ -17,7 +17,9 @@ namespace rbxInstance_Players_methods {
 }; // namespace rbxInstance_Players_methods
 
 void rbxInstance_Players_init(lua_State* L, std::shared_ptr<rbxInstance> datamodel) {
-    rbxClass::class_map["Players"]->methods["GetPlayers"].func = rbxInstance_Players_methods::getPlayers;
+    auto& this_class = rbxClass::class_map.at("Players");
+
+    this_class->methods.at("GetPlayers").func = rbxInstance_Players_methods::getPlayers;
 
     auto players_service = ServiceProvider::getService(L, datamodel, "Players");
     rbxInstance_Player_init(L, players_service);

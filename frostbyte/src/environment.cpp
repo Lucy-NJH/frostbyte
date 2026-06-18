@@ -1,7 +1,9 @@
 #include "environment.hpp"
 
 #include "common.hpp"
+#ifndef FROSTBYTE_HEADLESS
 #include "raylib.h"
+#endif
 #include "taskscheduler.hpp"
 
 #include "engine/classes/userinputservice.hpp"
@@ -322,20 +324,27 @@ static int fr_getfpscap(lua_State* L) {
 }
 
 static int fr_setwindowtitle(lua_State* L) {
+    #ifndef FROSTBYTE_HEADLESS
     SetWindowTitle(luaL_checkstring(L, 1));
+    #endif
 
     return 0;
 }
 
 static int fr_setclipboard(lua_State* L) {
+    #ifndef FROSTBYTE_HEADLESS
     SetClipboardText(luaL_checkstring(L, 1));
+    #endif
+
     return 0;
 }
 
 static int fr_getclipboard(lua_State* L) {
+    #ifndef FROSTBYTE_HEADLESS
     if (const char* text = GetClipboardText())
         lua_pushstring(L, text);
     else
+    #endif
         lua_pushstring(L, "");
 
     return 1;
@@ -474,11 +483,13 @@ void open_frostbyte_environment(lua_State *L) {
     {
     lua_pushvalue(L, LUA_GLOBALSINDEX);
 
+    #ifndef FROSTBYTE_HEADLESS
     setfunctionfield(L, DrawEntry__index, "getrenderproperty");
     setfunctionfield(L, DrawEntry__newindex, "setrenderproperty");
     setfunctionfield(L, fr_isrenderobject, "isrenderobject");
     env_alias(isrenderobject, isrenderobj)
     setfunctionfield(L, DrawEntry_clear, "cleardrawcache");
+    #endif
 
     setfunctionfield(L, fireRBXScriptSignal, "firesignal");
 

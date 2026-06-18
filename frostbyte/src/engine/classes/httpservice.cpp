@@ -145,15 +145,10 @@ void luaToJson(luaL_Strbuf* buf, int index) {
                 }
             }
 
+            // TODO: idk if removing characters like this is fine (like idk what the expectations of a buf object are in Luau), we should probably just use our own normal char buffer and push it to the stack
             // remove trailing ", "
-            if (!empty) {
+            if (!empty)
                 buf->p -= 2;
-                // if (buf->storage) {
-                //     buf->storage->data[buf->storage->len - 1] = 0;
-                //     buf->storage->data[buf->storage->len - 2] = 0;
-                //     buf->storage->len -= 2;
-                // }
-            }
 
             luaL_addchar(buf, is_dictionary ? '}' : ']');
             break;
@@ -208,9 +203,11 @@ namespace rbxInstance_HttpService_methods {
 }; // namespace rbxInstance_HttpService_methods
 
 void rbxInstance_HttpService_init() {
-    rbxClass::class_map["HttpService"]->methods["GenerateGUID"].func = rbxInstance_HttpService_methods::generateGUID;
-    rbxClass::class_map["HttpService"]->methods["JSONDecode"].func = rbxInstance_HttpService_methods::jsonDecode;
-    rbxClass::class_map["HttpService"]->methods["JSONEncode"].func = rbxInstance_HttpService_methods::jsonEncode;
+    auto& this_class = rbxClass::class_map.at("HttpService");
+
+    this_class->methods.at("GenerateGUID").func = rbxInstance_HttpService_methods::generateGUID;
+    this_class->methods.at("JSONDecode").func = rbxInstance_HttpService_methods::jsonDecode;
+    this_class->methods.at("JSONEncode").func = rbxInstance_HttpService_methods::jsonEncode;
 }
 
 }; // namespace frostbyte

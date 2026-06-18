@@ -8,7 +8,9 @@
 #include <stdexcept>
 #include <thread>
 
+#ifndef FROSTBYTE_HEADLESS
 #include "raylib.h"
+#endif
 #include "scriptlanguage.hpp"
 
 #include "common.hpp"
@@ -97,7 +99,9 @@ void TaskScheduler::setTargetFps(int target) {
     // std::lock_guard lock(target_fps_mutex);
 
     target_fps = target;
+    #ifndef FROSTBYTE_HEADLESS
     SetTargetFPS(target);
+    #endif
 }
 
 // std::shared_mutex TaskScheduler::gc_mutex;

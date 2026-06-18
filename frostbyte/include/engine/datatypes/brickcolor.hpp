@@ -2,7 +2,7 @@
 
 #include "lua.h"
 
-#include "raylib.h"
+#include "renderstubs.hpp"
 
 #include <vector>
 

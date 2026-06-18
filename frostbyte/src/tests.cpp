@@ -111,20 +111,20 @@ namespace frostbyte {
             check(2, 3, 0, 0) \
         "},
 
-        /*
         { .name = "QueryDescendants", .value = "local root = Instance.new(\"Part\") \
-            local a, b = pcall(root.QueryDescendants, root, \"\")\
-            assert(type(b) == \"table\" and not next(b))\
-            a, b = pcall(root.QueryDescendants, root, \" \")\
-            assert(type(b) == \"table\" and not next(b))\
-            a, b = pcall(root.QueryDescendants, root, \"\\4\")\
-            assert(type(b) == \"string\" and b == \"Expected at least one filter\")\
-            a, b = pcall(root.QueryDescendants, root, \" \\4\")\
-            assert(type(b) == \"string\" and b == \"Expected at least one filter\")\
-            a, b = pcall(root.QueryDescendants, root, \"#foo\\4\")\
-            assert(type(b) == \"string\" and b == \"Unexpected trailing character: '\4'\")\
+            \nlocal a, b = pcall(root.QueryDescendants, root, \"\")\
+            \nassert(type(b) == \"table\" and not next(b))\
+            \na, b = pcall(root.QueryDescendants, root, \" \")\
+            \nassert(type(b) == \"table\" and not next(b))\
+            \na, b = pcall(root.QueryDescendants, root, \"\\4\")\
+            \nassert(type(b) == \"string\" and b == \"Expected at least one filter\")\
+            \na, b = pcall(root.QueryDescendants, root, \" \\4\")\
+            \nassert(type(b) == \"string\" and b == \"Expected at least one filter\")\
+            \na, b = pcall(root.QueryDescendants, root, \"\\4foo\")\
+            \nassert(type(b) == \"string\" and b == \"Expected at least one filter\")\
+            \na, b = pcall(root.QueryDescendants, root, \"#foo\\4\")\
+            \nassert(type(b) == \"string\" and b == \"Unexpected trailing character: '\4'\")\
         "}
-        */
     };
     constexpr int test_count = sizeof(test_list) / sizeof(test_list[0]);
 

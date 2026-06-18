@@ -1,4 +1,5 @@
 #include "ui/instanceexplorer.hpp"
+#ifndef FROSTBYTE_HEADLESS
 #include "ui/ui.hpp"
 #include "engine/classes/instance.hpp"
 
@@ -235,7 +236,7 @@ void UI_InstanceExplorer_render(lua_State *L) {
 
     ImGui::BeginChild("Properties", ImVec2{0, 0}, ImGuiChildFlags_None);
 
-    const auto& rbxinstance_parent_property = rbxClass::class_map["Instance"]->properties["Parent"];
+    const auto& rbxinstance_parent_property = rbxClass::class_map.at("Instance")->properties.at("Parent");
 
     if (auto selected = selected_instance.lock()) {
         auto selected_name = getInstanceValue<std::string>(selected, PROP_INSTANCE_NAME);
@@ -286,3 +287,15 @@ void UI_InstanceExplorer_render(lua_State *L) {
 }
 
 }; // namespace frostbyte
+
+#else
+
+namespace frostbyte {
+
+void UI_InstanceExplorer_init(std::shared_ptr<rbxInstance> datamodel) {
+};
+
+
+}; // namespace frostbyte
+
+#endif

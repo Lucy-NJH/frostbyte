@@ -132,12 +132,12 @@ void tryRunCode(lua_State* L, const char* name, const char* code, size_t code_le
 }
 
 bool app(frostbyte::FrostbyteConfiguration& configuration) {
-    try {
+    // try {
         frostbyte::Frostbyte::initialize(configuration);
-    } catch (std::exception& e) {
-        fprintf(stderr, "ERROR: failed to initialize frostbyte: %s", e.what());
-        exit(1);
-    }
+    // } catch (std::exception& e) {
+    //     fprintf(stderr, "ERROR: failed to initialize frostbyte: %s", e.what());
+    //     exit(1);
+    // }
 
     lua_State* L = frostbyte::Frostbyte::L;
     lua_State* appL = frostbyte::Frostbyte::appL;
@@ -200,6 +200,7 @@ bool app(frostbyte::FrostbyteConfiguration& configuration) {
                 if (ImGui::MenuItem("enable stephook", nullptr, &frostbyte::enable_stephook))
                     frostbyte::onEnableStephookChange(frostbyte::Frostbyte::appL);
 
+                ImGui::MenuItem("HttpGet synchronous Argument Enabled", nullptr, &frostbyte::httpget_synchronous_argument);
                 ImGui::MenuItem("RunService IsServer", nullptr, &frostbyte::runservice_is_server);
                 ImGui::MenuItem("RunService IsStudio", nullptr, &frostbyte::runservice_is_studio);
 
@@ -246,8 +247,6 @@ bool app(frostbyte::FrostbyteConfiguration& configuration) {
                 ImGui::MenuItem("Enable RunService", nullptr, &frostbyte::enable_run_service);
                 ImGui::MenuItem("Enable TweenService", nullptr, &frostbyte::enable_tween_service);
                 ImGui::MenuItem("Enable GuiObject rendering", nullptr, &frostbyte::enable_gui_object_rendering);
-
-                ImGui::MenuItem("HttpGet synchronous Argument Enabled", nullptr, &frostbyte::httpget_synchronous_argument);
 
                 ImGui::MenuItem("Function Explorer", nullptr, &frostbyte::menu_function_explorer_open);
                 ImGui::MenuItem("Table Explorer", nullptr, &frostbyte::menu_table_explorer_open);
@@ -438,28 +437,28 @@ bool app(frostbyte::FrostbyteConfiguration& configuration) {
 
                     ImGui::Checkbox("##info", &frostbyte::Console::ScriptConsole.show_info);
                     ImGui::SameLine();
-                    ImGui::TextColored(frostbyte::Console::ColorINFO, "INFO");
+                    ImGui::TextColored(ImVec4(frostbyte::Console::ColorINFO.x, frostbyte::Console::ColorINFO.y, frostbyte::Console::ColorINFO.z, frostbyte::Console::ColorINFO.w), "INFO");
                     if (ImGui::IsItemClicked())
                         frostbyte::Console::ScriptConsole.show_info ^= true;
                     ImGui::SameLine();
 
                     ImGui::Checkbox("##warning", &frostbyte::Console::ScriptConsole.show_warning);
                     ImGui::SameLine();
-                    ImGui::TextColored(frostbyte::Console::ColorWARNING, "WARNING");
+                    ImGui::TextColored(ImVec4(frostbyte::Console::ColorWARNING.x, frostbyte::Console::ColorWARNING.y, frostbyte::Console::ColorWARNING.z, frostbyte::Console::ColorWARNING.w), "WARNING");
                     if (ImGui::IsItemClicked())
                         frostbyte::Console::ScriptConsole.show_warning ^= true;
                     ImGui::SameLine();
 
                     ImGui::Checkbox("##error", &frostbyte::Console::ScriptConsole.show_error);
                     ImGui::SameLine();
-                    ImGui::TextColored(frostbyte::Console::ColorERROR, "ERROR");
+                    ImGui::TextColored(ImVec4(frostbyte::Console::ColorERROR.x, frostbyte::Console::ColorERROR.y, frostbyte::Console::ColorERROR.z, frostbyte::Console::ColorERROR.w), "ERROR");
                     if (ImGui::IsItemClicked())
                         frostbyte::Console::ScriptConsole.show_error ^= true;
                     ImGui::SameLine();
 
                     ImGui::Checkbox("##debug", &frostbyte::Console::ScriptConsole.show_debug);
                     ImGui::SameLine();
-                    ImGui::TextColored(frostbyte::Console::ColorDEBUG, "DEBUG");
+                    ImGui::TextColored(ImVec4(frostbyte::Console::ColorDEBUG.x, frostbyte::Console::ColorDEBUG.y, frostbyte::Console::ColorDEBUG.z, frostbyte::Console::ColorDEBUG.w), "DEBUG");
                     if (ImGui::IsItemClicked())
                         frostbyte::Console::ScriptConsole.show_debug ^= true;
 

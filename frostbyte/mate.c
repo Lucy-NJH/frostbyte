@@ -3,20 +3,56 @@
 
 int main(int argc, char** argv) {
     if (argc < 2) {
-        printf("usage: %s RLIMGUI_PATH\n", argc ? argv[0] : "mate");
+        printf("usage: %s [RLIMGUI_PATH] [--headless]\n", argc ? argv[0] : "mate");
         return 1;
     }
 
-    const char* rlimgui_path = argv[1];
-    int path_buffer_size = strlen(rlimgui_path) + 20;
-    char* path_buffer = (char*) malloc(path_buffer_size);
-    memset(path_buffer, 0, path_buffer_size);
+    bool is_headless = false;
+    const char* headless = "";
+    const char* arg1 = argv[1];
+    if (strcmp(arg1, "--headless") == 0) {
+        is_headless = true;
+        headless = " -DFROSTBYTE_HEADLESS";
+    }
+
+    printf("headless: %d\n", is_headless);
+
+    char* path_buffer = NULL;
+    int path_buffer_size = strlen(arg1) + 30;
+
+    if (!is_headless) {
+        path_buffer = (char*) malloc(path_buffer_size);
+        memset(path_buffer, 0, path_buffer_size);
+    }
+
+    char lib_flags[120];
+    memset(lib_flags, 0, 120);
+    snprintf(lib_flags, 120, "-std=c++17 -Wall -Werror -g -march=native -static-libstdc++ -static-libgcc -fPIC%s", headless);
+
+    char build_dir[30];
+    memset(build_dir, 0, 30);
+    if (is_headless)
+        snprintf(build_dir, 30, "./build-headless");
+    else
+        snprintf(build_dir, 30, "./build");
+
+    MateOptions mate_options = {
+        .buildDirectory = build_dir
+    };
+    CreateConfig(mate_options);
 
     StartBuild();
 
+    char lib_output[30];
+    memset(lib_output, 0, 30);
+    if (is_headless)
+        snprintf(lib_output, 30, "libfrostbyte-headless");
+    else
+        snprintf(lib_output, 30, "libfrostbyte");
+
     StaticLibOptions lib_options = {
-        .output = "libfrostbyte",
-        .flags = "-std=c++17 -Wall -Werror -g -march=native -static-libstdc++ -static-libgcc -fPIC"
+        .output = lib_output,
+        .flags = lib_flags
     };
     StaticLib lib = CreateStaticLib(lib_options);
 
@@ -37,24 +73,24 @@ int main(int argc, char** argv) {
     AddIncludePaths(lib, "./dependencies/luau/VM/include");
     AddIncludePaths(lib, "./dependencies/luau/VM/src");
 
-    snprintf(path_buffer, path_buffer_size, "%s/raylib-master/src", rlimgui_path);
-    AddIncludePaths(lib, path_buffer);
-    memset(path_buffer, 0, path_buffer_size);
-    snprintf(path_buffer, path_buffer_size, "%s/imgui-master", rlimgui_path);
-    AddIncludePaths(lib, path_buffer);
+    if (!is_headless) {
+        snprintf(path_buffer, path_buffer_size, "%s/raylib-master/src", arg1);
+        AddIncludePaths(lib, path_buffer);
+        memset(path_buffer, 0, path_buffer_size);
+        snprintf(path_buffer, path_buffer_size, "%s/imgui-master", arg1);
+        AddIncludePaths(lib, path_buffer);
 
-    // AddLibraryPaths(lib, "./dependencies/luau/cmake");
-
-    memset(path_buffer, 0, path_buffer_size);
-    snprintf(path_buffer, path_buffer_size, "%s/bin/Release", rlimgui_path);
-    AddLibraryPaths(lib, path_buffer);
-
-    // AddLibraryPaths(lib, "./dependencies/curl/cmake/lib");
+        memset(path_buffer, 0, path_buffer_size);
+        snprintf(path_buffer, path_buffer_size, "%s/bin/Release", arg1);
+        AddLibraryPaths(lib, path_buffer);
+    }
 
     InstallStaticLib(lib);
 
     EndBuild();
 
-    free(path_buffer);
+    if (path_buffer)
+        free(path_buffer);
     return 0;
 }
+

@@ -10,7 +10,9 @@
 #include "lua.h"
 #include "lualib.h"
 
+#ifndef FROSTBYTE_HEADLESS
 #include "raylib.h"
+#endif
 
 namespace frostbyte {
 
@@ -18,11 +20,13 @@ namespace rbxInstance_TextService_methods {
 static int getTextSize(lua_State* L) {
     lua_checkinstance(L, 1, "TextService");
 
+    #ifdef FROSTBYTE_HEADLESS
+    return pushVector2(L, 0.f, 0.f);
+    #else
     const char* text = luaL_checkstring(L, 2);
     double font_size = luaL_checknumber(L, 3);
     EnumItem* font_enum_item = lua_checkenumitem(L, 4, "Font");
     auto frame_size = lua_checkvector2(L, 5);
-
     Font* font = getFontFromEnum(L, font_enum_item);
     if (!font) {
         // luaL_error(L, "[INTERNAL ERROR] failed to get font from enum item %s", font_enum_item->name.c_str());
@@ -39,11 +43,14 @@ static int getTextSize(lua_State* L) {
         measured.y = frame_size->y;
 
     return pushVector2(L, measured);
+    #endif
 }
 };
 
 void rbxInstance_TextService_init() {
-    rbxClass::class_map["TextService"]->methods["GetTextSize"].func = rbxInstance_TextService_methods::getTextSize;
+    auto& this_class = rbxClass::class_map.at("TextService");
+
+    this_class->methods.at("GetTextSize").func = rbxInstance_TextService_methods::getTextSize;
 }
 
 }; // namespace frostbyte

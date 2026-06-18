@@ -1,4 +1,5 @@
 #include "imguitheme.hpp"
+#ifndef FROSTBYTE_HEADLESS
 
 namespace frostbyte {
 
@@ -426,3 +427,5 @@ void changeImGuiTheme(ImGuiTheme theme) {
 }
 
 }; // namespace frostbyte
+
+#endif

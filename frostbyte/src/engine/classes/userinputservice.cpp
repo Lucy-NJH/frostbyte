@@ -10,8 +10,6 @@
 #include "console.hpp"
 #include "taskscheduler.hpp"
 
-#include "raylib.h"
-
 #include "lualib.h"
 
 #include <map>
@@ -39,6 +37,125 @@ void genericFireInputObject(lua_State* L, std::shared_ptr<rbxInstance> instance,
 
     lua_call(L, 3, 0);
 }
+
+#ifdef FROSTBYTE_HEADLESS
+typedef enum {
+    KEY_NULL            = 0,        // Key: NULL, used for no key pressed
+    // Alphanumeric keys
+    KEY_APOSTROPHE      = 39,       // Key: '
+    KEY_COMMA           = 44,       // Key: ,
+    KEY_MINUS           = 45,       // Key: -
+    KEY_PERIOD          = 46,       // Key: .
+    KEY_SLASH           = 47,       // Key: /
+    KEY_ZERO            = 48,       // Key: 0
+    KEY_ONE             = 49,       // Key: 1
+    KEY_TWO             = 50,       // Key: 2
+    KEY_THREE           = 51,       // Key: 3
+    KEY_FOUR            = 52,       // Key: 4
+    KEY_FIVE            = 53,       // Key: 5
+    KEY_SIX             = 54,       // Key: 6
+    KEY_SEVEN           = 55,       // Key: 7
+    KEY_EIGHT           = 56,       // Key: 8
+    KEY_NINE            = 57,       // Key: 9
+    KEY_SEMICOLON       = 59,       // Key: ;
+    KEY_EQUAL           = 61,       // Key: =
+    KEY_A               = 65,       // Key: A | a
+    KEY_B               = 66,       // Key: B | b
+    KEY_C               = 67,       // Key: C | c
+    KEY_D               = 68,       // Key: D | d
+    KEY_E               = 69,       // Key: E | e
+    KEY_F               = 70,       // Key: F | f
+    KEY_G               = 71,       // Key: G | g
+    KEY_H               = 72,       // Key: H | h
+    KEY_I               = 73,       // Key: I | i
+    KEY_J               = 74,       // Key: J | j
+    KEY_K               = 75,       // Key: K | k
+    KEY_L               = 76,       // Key: L | l
+    KEY_M               = 77,       // Key: M | m
+    KEY_N               = 78,       // Key: N | n
+    KEY_O               = 79,       // Key: O | o
+    KEY_P               = 80,       // Key: P | p
+    KEY_Q               = 81,       // Key: Q | q
+    KEY_R               = 82,       // Key: R | r
+    KEY_S               = 83,       // Key: S | s
+    KEY_T               = 84,       // Key: T | t
+    KEY_U               = 85,       // Key: U | u
+    KEY_V               = 86,       // Key: V | v
+    KEY_W               = 87,       // Key: W | w
+    KEY_X               = 88,       // Key: X | x
+    KEY_Y               = 89,       // Key: Y | y
+    KEY_Z               = 90,       // Key: Z | z
+    KEY_LEFT_BRACKET    = 91,       // Key: [
+    KEY_BACKSLASH       = 92,       // Key: '\'
+    KEY_RIGHT_BRACKET   = 93,       // Key: ]
+    KEY_GRAVE           = 96,       // Key: `
+    // Function keys
+    KEY_SPACE           = 32,       // Key: Space
+    KEY_ESCAPE          = 256,      // Key: Esc
+    KEY_ENTER           = 257,      // Key: Enter
+    KEY_TAB             = 258,      // Key: Tab
+    KEY_BACKSPACE       = 259,      // Key: Backspace
+    KEY_INSERT          = 260,      // Key: Ins
+    KEY_DELETE          = 261,      // Key: Del
+    KEY_RIGHT           = 262,      // Key: Cursor right
+    KEY_LEFT            = 263,      // Key: Cursor left
+    KEY_DOWN            = 264,      // Key: Cursor down
+    KEY_UP              = 265,      // Key: Cursor up
+    KEY_PAGE_UP         = 266,      // Key: Page up
+    KEY_PAGE_DOWN       = 267,      // Key: Page down
+    KEY_HOME            = 268,      // Key: Home
+    KEY_END             = 269,      // Key: End
+    KEY_CAPS_LOCK       = 280,      // Key: Caps lock
+    KEY_SCROLL_LOCK     = 281,      // Key: Scroll down
+    KEY_NUM_LOCK        = 282,      // Key: Num lock
+    KEY_PRINT_SCREEN    = 283,      // Key: Print screen
+    KEY_PAUSE           = 284,      // Key: Pause
+    KEY_F1              = 290,      // Key: F1
+    KEY_F2              = 291,      // Key: F2
+    KEY_F3              = 292,      // Key: F3
+    KEY_F4              = 293,      // Key: F4
+    KEY_F5              = 294,      // Key: F5
+    KEY_F6              = 295,      // Key: F6
+    KEY_F7              = 296,      // Key: F7
+    KEY_F8              = 297,      // Key: F8
+    KEY_F9              = 298,      // Key: F9
+    KEY_F10             = 299,      // Key: F10
+    KEY_F11             = 300,      // Key: F11
+    KEY_F12             = 301,      // Key: F12
+    KEY_LEFT_SHIFT      = 340,      // Key: Shift left
+    KEY_LEFT_CONTROL    = 341,      // Key: Control left
+    KEY_LEFT_ALT        = 342,      // Key: Alt left
+    KEY_LEFT_SUPER      = 343,      // Key: Super left
+    KEY_RIGHT_SHIFT     = 344,      // Key: Shift right
+    KEY_RIGHT_CONTROL   = 345,      // Key: Control right
+    KEY_RIGHT_ALT       = 346,      // Key: Alt right
+    KEY_RIGHT_SUPER     = 347,      // Key: Super right
+    KEY_KB_MENU         = 348,      // Key: KB menu
+    // Keypad keys
+    KEY_KP_0            = 320,      // Key: Keypad 0
+    KEY_KP_1            = 321,      // Key: Keypad 1
+    KEY_KP_2            = 322,      // Key: Keypad 2
+    KEY_KP_3            = 323,      // Key: Keypad 3
+    KEY_KP_4            = 324,      // Key: Keypad 4
+    KEY_KP_5            = 325,      // Key: Keypad 5
+    KEY_KP_6            = 326,      // Key: Keypad 6
+    KEY_KP_7            = 327,      // Key: Keypad 7
+    KEY_KP_8            = 328,      // Key: Keypad 8
+    KEY_KP_9            = 329,      // Key: Keypad 9
+    KEY_KP_DECIMAL      = 330,      // Key: Keypad .
+    KEY_KP_DIVIDE       = 331,      // Key: Keypad /
+    KEY_KP_MULTIPLY     = 332,      // Key: Keypad *
+    KEY_KP_SUBTRACT     = 333,      // Key: Keypad -
+    KEY_KP_ADD          = 334,      // Key: Keypad +
+    KEY_KP_ENTER        = 335,      // Key: Keypad Enter
+    KEY_KP_EQUAL        = 336,      // Key: Keypad =
+    // Android key buttons
+    KEY_BACK            = 4,        // Key: Android back button
+    KEY_MENU            = 5,        // Key: Android menu button
+    KEY_VOLUME_UP       = 24,       // Key: Android volume up button
+    KEY_VOLUME_DOWN     = 25        // Key: Android volume down button
+} KeyboardKey;
+#endif
 
 #define KEYCODE_MAP                             \
     X(KEY_NULL, "Unknown", NULL)                \
@@ -318,7 +435,11 @@ void UserInputService::signalMouseMovement(std::shared_ptr<rbxInstance> instance
 int global_mouse_wheel = 0;
 bool UserInputService::is_window_focused = false;
 bool UserInputService::any_imgui = false;
+#ifdef FROSTBYTE_HEADLESS
+Vector2 UserInputService::mouse_position{ 0.f, 0.f };
+#else
 Vector2 UserInputService::mouse_position = GetMousePosition();
+#endif
 Vector2 UserInputService::mouse_delta{ 0.f, 0.f };
 std::weak_ptr<rbxInstance> last_input;
 std::weak_ptr<rbxInstance> last_topmost;
@@ -356,6 +477,7 @@ bool UserInputService::isTextBoxFocused(std::shared_ptr<rbxInstance> textbox) {
 }
 
 void UserInputService::process(lua_State *L) {
+    #ifndef FROSTBYTE_HEADLESS
     UserInputService::mouse_delta = GetMouseDelta();
     UserInputService::mouse_position = GetMousePosition();
     const Vector2 mouse_wheel_vector = GetMouseWheelMoveV();
@@ -695,6 +817,7 @@ void UserInputService::process(lua_State *L) {
     }
 
     last_topmost = topmost;
+    #endif
 }
 
 #undef keyShifted
@@ -712,6 +835,7 @@ namespace rbxInstance_UserInputService_methods {
 
         lua_newtable(L);
 
+        #ifndef FROSTBYTE_HEADLESS
         int index = 0;
         for (unsigned int key = 0; key < MAX_KEYBOARD_KEYS; key++) {
             const bool down = IsKeyDown(key);
@@ -724,6 +848,7 @@ namespace rbxInstance_UserInputService_methods {
             lua_pushinstance(L, input_object);
             lua_rawseti(L, -2, ++index);
         }
+        #endif
 
         return 1;
     }
@@ -752,6 +877,8 @@ namespace rbxInstance_UserInputService_methods {
 
         lua_newtable(L);
 
+        #ifndef FROSTBYTE_HEADLESS
+
         int index = 0;
         for (unsigned int mouse = 0; mouse < 3; mouse++) {
             const bool down = IsMouseButtonDown(mouse);
@@ -765,19 +892,25 @@ namespace rbxInstance_UserInputService_methods {
             lua_rawseti(L, -2, ++index);
         }
 
+        #endif
+
         return 1;
     }
     static int isKeyDown(lua_State* L) {
         lua_checkinstance(L, 1, "UserInputService");
 
-        EnumItem* enum_item = lua_checkenumitem(L, 2, "KeyCode");
         bool is_down = false;
+        #ifndef FROSTBYTE_HEADLESS
+
+        EnumItem* enum_item = lua_checkenumitem(L, 2, "KeyCode");
         for (const auto& pair : raylib_key_to_keycode_map) {
             if (strequal(pair.second, enum_item->name.c_str())) {
                 is_down = IsKeyDown(pair.first);
                 break;
             }
         }
+
+        #endif
 
         lua_pushboolean(L, is_down);
         return 1;
@@ -786,6 +919,8 @@ namespace rbxInstance_UserInputService_methods {
         lua_checkinstance(L, 1, "UserInputService");
 
         luaL_argcheck(L, lua_isnumber(L, 2) || lua_isuserdata(L, 2), 2, "expected number or userdata");
+
+        #ifndef FROSTBYTE_HEADLESS
 
         int mouse = -1;
         if (lua_isnumber(L, 2))
@@ -800,20 +935,27 @@ namespace rbxInstance_UserInputService_methods {
             lua_pushboolean(L, IsMouseButtonPressed(mouse));
 
         return 1;
+
+        #endif
+
+        lua_pushboolean(L, false);
+        return 1;
     }
 }; // namespace rbxInstance_UserInputService_methods
 
 void rbxInstance_UserInputService_init() {
     UserInputService::signalMouseMovement(nullptr, InputBegan);
 
-    rbxClass::class_map["UserInputService"]->methods["GetFocusedTextBox"].func = rbxInstance_UserInputService_methods::getFocusedTextBox;
-    rbxClass::class_map["UserInputService"]->methods["GetKeysPressed"].func = rbxInstance_UserInputService_methods::getKeysPressed;
-    rbxClass::class_map["UserInputService"]->methods["GetLastInputType"].func = rbxInstance_UserInputService_methods::getLastInputType;
-    rbxClass::class_map["UserInputService"]->methods["GetMouseDelta"].func = rbxInstance_UserInputService_methods::getMouseDelta;
-    rbxClass::class_map["UserInputService"]->methods["GetMouseLocation"].func = rbxInstance_UserInputService_methods::getMouseLocation;
-    rbxClass::class_map["UserInputService"]->methods["GetMouseButtonsPressed"].func = rbxInstance_UserInputService_methods::getMouseButtonsPressed;
-    rbxClass::class_map["UserInputService"]->methods["IsKeyDown"].func = rbxInstance_UserInputService_methods::isKeyDown;
-    rbxClass::class_map["UserInputService"]->methods["IsMouseButtonPressed"].func = rbxInstance_UserInputService_methods::isMouseButtonPressed;
+    auto& this_class = rbxClass::class_map.at("UserInputService");
+
+    this_class->methods.at("GetFocusedTextBox").func = rbxInstance_UserInputService_methods::getFocusedTextBox;
+    this_class->methods.at("GetKeysPressed").func = rbxInstance_UserInputService_methods::getKeysPressed;
+    this_class->methods.at("GetLastInputType").func = rbxInstance_UserInputService_methods::getLastInputType;
+    this_class->methods.at("GetMouseDelta").func = rbxInstance_UserInputService_methods::getMouseDelta;
+    this_class->methods.at("GetMouseLocation").func = rbxInstance_UserInputService_methods::getMouseLocation;
+    this_class->methods.at("GetMouseButtonsPressed").func = rbxInstance_UserInputService_methods::getMouseButtonsPressed;
+    this_class->methods.at("IsKeyDown").func = rbxInstance_UserInputService_methods::isKeyDown;
+    this_class->methods.at("IsMouseButtonPressed").func = rbxInstance_UserInputService_methods::isMouseButtonPressed;
 }
 
 }; // namespace frostbyte

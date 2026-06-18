@@ -1,4 +1,5 @@
 #include "ui/drawentrylist.hpp"
+#ifndef FROSTBYTE_HEADLESS
 #include "fontloader.hpp"
 #include "imgui.h"
 #include "ui/ui.hpp"
@@ -234,3 +235,5 @@ void UI_DrawEntryList_render(lua_State *L) {
 }
 
 }; // namespace frostbyte
+
+#endif

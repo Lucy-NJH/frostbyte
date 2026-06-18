@@ -39,8 +39,7 @@ sudo apt-get install cmake build-essential git \
 ```
 Then just run each script inside the dependencies folder with python:
 ```bash
-# inside ./frostbyte
-cd dependencies
+cd frostbyte/dependencies
 
 python3 ./build_curl.py & python3 ./build_luau.py
 
@@ -60,8 +59,7 @@ To build again, simply run `./mate` just like before and it will detect any chan
 
 # BUILDING THE DESKTOP APPLICATION
 ```bash
-#inside ./frostbyte-desktop
-cd dependencies
+cd frostbyte-desktop/dependencies
 
 python3 ./build_rlImGui.py & python3 ./build_ImGuiFileDialog.py
 

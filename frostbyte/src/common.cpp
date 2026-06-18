@@ -17,7 +17,11 @@
 
 namespace frostbyte {
 
+#ifdef FROSTBYTE_HEADLESS
+bool print_stdout = true;
+#else
 bool print_stdout = false;
+#endif
 
 const char* currfuncname(lua_State* L) {
     Closure* cl = L->ci > L->base_ci ? curr_func(L) : NULL;

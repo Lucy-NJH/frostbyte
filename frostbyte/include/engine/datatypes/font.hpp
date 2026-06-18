@@ -2,7 +2,11 @@
 
 #include "engine/datatypes/enum.hpp"
 
+#ifdef FROSTBYTE_HEADLESS
+typedef void Font;
+#else
 #include "raylib.h"
+#endif
 
 #include "lua.h"
 

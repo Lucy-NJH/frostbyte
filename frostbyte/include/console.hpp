@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "imgui.h"
+#include "renderstubs.hpp"
 #include "luaconf.h"
 
 namespace frostbyte {
@@ -20,10 +20,10 @@ public:
     static Console ScriptConsole;
     static Console TestsConsole;
 
-    static ImVec4 ColorINFO;
-    static ImVec4 ColorWARNING;
-    static ImVec4 ColorERROR;
-    static ImVec4 ColorDEBUG;
+    static Vector4 ColorINFO;
+    static Vector4 ColorWARNING;
+    static Vector4 ColorERROR;
+    static Vector4 ColorDEBUG;
 
     class Message {
     public:

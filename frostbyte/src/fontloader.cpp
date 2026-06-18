@@ -4,8 +4,6 @@
 
 #include "common.hpp"
 
-#include <fstream>
-
 namespace frostbyte {
 
 lua_State* FontLoader::L = nullptr;
@@ -16,6 +14,14 @@ std::vector<std::string> FontLoader::font_name_list;
 
 std::unordered_map<std::string, Font*> FontLoader::engine_font_map;
 
+#ifdef FROSTBYTE_HEADLESS
+void FontLoader::load() { }
+void FontLoader::unload() { }
+
+size_t FontLoader::getFont(unsigned char *data, int data_size) {
+    return 0;
+}
+#else
 void FontLoader::load() {
     // NOTE: L will not be initialized yet
 
@@ -134,5 +140,6 @@ size_t FontLoader::getFont(unsigned char *data, int data_size) {
 
     return index;
 }
+#endif
 
 }; // namespace fakerobox

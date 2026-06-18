@@ -49,13 +49,12 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <map>
 #include <memory>
 #include <variant>
 
 namespace frostbyte {
 
-std::map<std::string, std::shared_ptr<rbxClass>> rbxClass::class_map;
+std::unordered_map<std::string, std::shared_ptr<rbxClass>> rbxClass::class_map;
 std::vector<std::string> rbxClass::valid_class_names;
 std::vector<std::string> rbxClass::valid_services;
 
@@ -67,7 +66,7 @@ std::shared_ptr<rbxProperty> rbxClass::newInternalProperty(const char* name, Typ
     property->type_category = type_category;
     property->default_value = default_value;
 
-    properties[name] = property;
+    properties.try_emplace(name, property);
 
     property->default_value.property = property;
 
@@ -123,7 +122,10 @@ bool rbxInstance::isA(rbxClass* target_class) {
     return false;
 }
 bool rbxInstance::isA(const char* class_name) {
-    return isA(rbxClass::class_map.at(class_name).get());
+    auto class_it = rbxClass::class_map.find(class_name);
+    if (class_it == rbxClass::class_map.end())
+        return false;
+    return isA(class_it->second.get());
 }
 
 int rbxInstance__index(lua_State* L);
@@ -560,17 +562,34 @@ inline bool isQueryString(char ch) {
     return isAlpha(ch) || isDigit(ch) || ch == '_' || ch == '-';
 }
 
-int queryReadString(char* buf, const char* selector) {
+// int queryReadString(char* buf, const char* selector) {
+//     int count = 0;
+//     for (; *selector; selector++) {
+//         char ch = *selector;
+//         if (!isQueryString(ch))
+//             goto END;
+
+//         // NOTE: this should not be possible since lua strings cannot get this high.. do we keep this?
+//         if (count + 1 >= MAXSSIZE)
+//             goto END;
+
+//         buf[count++] = ch;
+//     }
+
+//     END:
+//     return count;
+// }
+int queryReadString(std::string& buf, const char*& selector) {
     int count = 0;
-    for (char ch = *selector; ch; selector++) {
-        if (!isQueryString(ch))
+    for (; *selector; selector++) {
+        char ch = *selector;
+        if (!isQueryString(ch)) {
+            selector--;
             goto END;
+        }
 
-        // NOTE: this should not be possible since lua strings cannot get this high.. do we keep this?
-        if (count + 1 >= MAXSSIZE)
-            goto END;
-
-        buf[count++] = ch;
+        buf.push_back(ch);
+        count++;
     }
 
     END:
@@ -671,7 +690,7 @@ namespace rbxInstance_methods {
         const char* rawname = luaL_checkstring(L, 2);
 
         // FIXME: check duplicate
-        instance->attributes[rawname] = luaValueToValueVariant(L, 3);
+        instance->attributes.try_emplace(rawname, luaValueToValueVariant(L, 3));
 
         pushFunctionFromLookup(L, fireRBXScriptSignal);
 
@@ -740,10 +759,10 @@ namespace rbxInstance_methods {
         if (instance->values.find(key) == instance->values.end())
             luaL_error(L, "%s is not a valid property name.", key);
 
-        auto value = &instance->values[key];
+        auto value = &instance->values.at(key);
         auto& property = value->property;
         if (property->route)
-            value = &instance->values[*property->route];
+            value = &instance->values.at(*property->route);
 
         if (property->tags & rbxProperty::NotScriptable)
             luaL_error(L, "%s is not a scriptable property.", key);
@@ -818,129 +837,163 @@ namespace rbxInstance_methods {
         }, true);
     }
 
-    // static int queryDescendants(lua_State* L) {
-    //     auto instance = lua_checkinstance(L, 1);
-    //     const char* selector = luaL_checkstring(L, 2);
+    static int queryDescendants(lua_State* L) {
+        auto instance = lua_checkinstance(L, 1);
+        const char* selector = luaL_checkstring(L, 2);
 
-    //     const char* original = selector;
+        // const char* original = selector;
 
-    //     if (!*selector) {
-    //         lua_newtable(L);
-    //         return 1;
-    //     }
+        // skip initial whitespace
+        for (; *selector; selector++) {
+            switch (*selector) {
+                case ' ':
+                case '\t':
+                case '\n':
+                    goto WHITESPACE_CONTINUE;
+                default:
+                    goto WHITESPACE_BREAK;
+            }
 
-    //     struct {
-    //         std::string classname;
-    //         std::vector<std::string> tag;
-    //         std::string name;
-    //         std::unordered_map<std::string, rbxValueVariant> member_values;
-    //         std::vector<std::string> attributes;
-    //         std::unordered_map<std::string, rbxValueVariant> attribute_values;
-    //     } Query;
-    //     char buf[MAXSSIZE];
-    //     memset(buf, 0, sizeof(char) * MAXSSIZE);
+            WHITESPACE_CONTINUE:
+            continue;
 
-    //     // skip initial whitespace
-    //     for (char ch = *selector; ch; selector++) {
-    //         switch (ch) {
-    //             case ' ':
-    //             case '\t':
-    //             case '\n':
-    //                 continue;
-    //             default:
-    //                 break;
-    //         }
-    //     }
+            WHITESPACE_BREAK:
+            break;
+        }
 
-    //     // TODO: unexpected trailing character for unrecognized characters *after* parsing a string
-    //     for (char ch = *selector; ch; selector++) {
-    //         switch (ch) {
-    //             case '.':
-    //                 selector++;
-    //                 if (queryReadString(buf, selector)) {
-    //                     Query.tag.push_back(buf);
-    //                     memset(buf, 0, sizeof(char) * MAXSSIZE);
-    //                 } else
-    //                     luaL_error(L, "Expected identifier for a tag");
-    //                 break;
-    //             case '#':
-    //                 selector++;
-    //                 if (queryReadString(buf, selector)) {
-    //                     // TODO: if you pass more than one name, the name filter becomes completely void (even if you pass, say, three as in #foo#bar#foo)
-    //                     Query.name.assign(buf);
-    //                     memset(buf, 0, sizeof(char) * MAXSSIZE);
-    //                 } else
-    //                     luaL_error(L, "Expected identifier for a name");
-    //                 break;
-    //             case '[': {
-    //                 selector++;
-    //                 bool is_attribute = false;
-    //                 if (*selector && *selector == '$') {
-    //                     selector++;
-    //                     is_attribute = true;
-    //                 }
+        if (!*selector) {
+            lua_newtable(L);
+            return 1;
+        }
 
-    //                 std::string left;
-    //                 std::string right;
+        std::string query_classname;
+        std::vector<std::string> query_tag;
+        std::string query_name;
+        std::unordered_map<std::string, rbxValueVariant> query_member_values;
+        std::vector<std::string> query_attributes;
+        std::unordered_map<std::string, rbxValueVariant> query_attribute_values;
 
-    //                 int count = 0;
-    //                 for (char ch = *selector; ch; selector++) {
-    //                     if (ch == ']') {
-    //                         break;
-    //                     } else if (ch == '=') {
-    //                         break;
-    //                     } else if (ch == ' ' || ch == '\t' || ch == '\n')
-    //                         break;
+        bool has_filter = false;
+        bool cancel = false;
 
-    //                     // NOTE: this should not be possible since lua strings cannot get this high.. do we keep this?
-    //                     if (count + 1 >= MAXSSIZE)
-    //                         goto END;
+        std::string buf;
+        buf.reserve(20);
 
-    //                     buf[count++] = ch;
-    //                 }
+        // TODO: unexpected trailing character for unrecognized characters *after* parsing a string
+        for (; *selector; selector++) {
+            char ch = *selector;
+            switch (ch) {
+                case '.':
+                    has_filter = true;
+                    selector++;
+                    if (queryReadString(buf, selector)) {
+                        query_tag.push_back(buf);
+                        // memset(buf, 0, sizeof(char) * MAXSSIZE);
+                        buf.clear();
+                    } else
+                        luaL_error(L, "Expected identifier for a tag");
+                    goto CONTINUE;
+                case '#':
+                    has_filter = true;
+                    if (!query_name.empty())
+                        cancel = true;
+                    selector++;
+                    if (queryReadString(buf, selector)) {
+                        // TODO: if you pass more than one name, the name filter becomes completely void (even if you pass, say, three as in #foo#bar#foo)
+                        query_name.assign(buf);
+                        // memset(buf, 0, sizeof(char) * MAXSSIZE);
+                        buf.clear();
+                    } else
+                        luaL_error(L, "Expected identifier for a name");
+                    goto CONTINUE;
+                case '[': {
+                    selector++;
+                    bool is_attribute = false;
+                    if (*selector == '$') {
+                        selector++;
+                        is_attribute = true;
+                    }
 
-    //                 END:
-    //                 if (!count)
-    //                     luaL_error(L, "Expected identifier for a %s name", is_attribute ? "attribute" : "property");
-    //                 break;
-    //             }
-    //             case ' ':
-    //             case '\t':
-    //             case '\n': // TODO: QueryDescendants("#foo\n#bar") will actually return neither foo nor bar nor "foo\n", but continuing here makes it match both foo and bar
-    //                 continue;
-    //         }
-    //         if (isQueryString(ch)) {
-    //             if (queryReadString(buf, selector))
-    //                 Query.classname.assign(buf);
-    //             else
-    //                 luaL_error(L, "Failed to read value for classname");
-    //         }
-    //     }
+                    std::string left;
+                    std::string right;
 
-    //     auto descendants = getDescendants(instance);
-    //     descendants.erase(std::remove_if(descendants.begin(), descendants.end(), [&Query] (std::weak_ptr<rbxInstance>& a) {
-    //         if (auto instance = a.lock()) {
-    //             if (!Query.name.empty() && instance->getValue<std::string>(PROP_INSTANCE_NAME) != Query.name)
-    //                 return true;
-    //             if (!Query.classname.empty() && !instance->isA(Query.classname.c_str()))
-    //                 return true;
-    //             // TODO: CollectionService
-    //             // TODO: member_values
+                    int count = 0;
+                    for (char ch; ch; selector++) {
+                        ch = *selector;
+                        if (ch == ']') {
+                            break;
+                        } else if (ch == '=') {
+                            if (buf.empty())
+                                luaL_error(L, "Expected identifier for a property name");
+                            left.assign(buf);
+                            buf.clear();
+                            break;
+                        } else if (ch == ' ' || ch == '\t' || ch == '\n')
+                            break;
 
-    //             return false;
-    //         }
-    //         return true;
-    //     }));
+                        // NOTE: this should not be possible since lua strings cannot get this high.. do we keep this?
+                        if (count + 1 >= MAXSSIZE)
+                            goto END;
 
-    //     lua_createtable(L, descendants.size(), 0);
+                        // buf[count++] = ch;
+                        buf.push_back(ch);
+                    }
 
-    //     for (size_t i = 0; i < descendants.size(); i++) {
-    //         lua_pushinstance(L, descendants[i]);
-    //         lua_rawseti(L, -2, i + 1);
-    //     }
+                    // TODO: finish implementing this
+                    buf.clear();
 
-    //     return 1;
-    // }
+                    END:
+                    if (!count)
+                        luaL_error(L, "Expected identifier for a %s name", is_attribute ? "attribute" : "property");
+                    goto CONTINUE;
+                }
+                case ' ':
+                case '\t':
+                case '\n':
+                    goto CONTINUE;
+            }
+
+            if (isQueryString(ch)) {
+                has_filter = true;
+                if (queryReadString(buf, selector)) {
+                    query_classname.assign(buf);
+                    buf.clear();
+                } else
+                    luaL_error(L, "Failed to read value for classname");
+            } else if (has_filter)
+                luaL_error(L, "Unexpected trailing character: '%c'", ch);
+            else {
+                cancel = true;
+                break;
+            }
+
+            CONTINUE: ;
+        }
+
+        if (!has_filter)
+            luaL_error(L, "Expected at least one filter");
+
+        if (cancel) {
+            lua_newtable(L);
+            return 1;
+        }
+
+        auto descendants = getDescendants(instance);
+        lua_createtable(L, descendants.size(), 0);
+
+        int i = 0;
+        for (const auto& instance : descendants) {
+            if (!query_name.empty() && instance->getValue<std::string>(PROP_INSTANCE_NAME) != query_name)
+                continue;
+            if (!query_classname.empty() && !instance->isA(query_classname.c_str()))
+                continue;
+
+            lua_pushinstance(L, instance);
+            lua_rawseti(L, -2, ++i);
+        }
+
+        return 1;
+    }
 }; // namespace rbxInstance_methods
 
 int rbxInstance__tostring(lua_State* L) {
@@ -951,14 +1004,14 @@ int rbxInstance__tostring(lua_State* L) {
 }
 
 rbxMethod* getMethod(lua_State* L, std::shared_ptr<rbxInstance>& instance, const char* method_name) {
-    rbxMethod* method = &instance->methods[method_name];
+    rbxMethod* method = &instance->methods.at(method_name);
     if (method->route)
-        method = &instance->methods[*method->route];
+        method = &instance->methods.at(*method->route);
 
     assert(!method->route);
 
     if (!method->func)
-        luaL_error(L, "INTERNAL ERROR: TODO implement '%s' on class %s", method->name.c_str(), method->_class->name.c_str());
+        luaL_error(L, "INTERNAL ERROR: TODO implement '%s' on class %s", method->name.c_str(), method->_class.c_str());
 
     return method;
 }
@@ -1058,10 +1111,10 @@ int rbxInstance__index(lua_State* L) {
     }
 
     {
-    auto value = &instance->values[key];
+    auto value = &instance->values.at(key);
     auto property = value->property;
     if (property->route)
-        value = &instance->values[*property->route];
+        value = &instance->values.at(*property->route);
 
     if (property->internal)
         goto INVALID_MEMBER;
@@ -1125,7 +1178,7 @@ void setInstanceParent(lua_State* L, std::shared_ptr<rbxInstance> instance, std:
     }
 
     if (!dont_set_value)
-        std::get<std::shared_ptr<rbxInstance>>(instance->values[PROP_INSTANCE_PARENT].value) = new_parent;
+        std::get<std::shared_ptr<rbxInstance>>(instance->values.at(PROP_INSTANCE_PARENT).value) = new_parent;
 }
 
 static int fr_getinstances(lua_State* L) {
@@ -1203,10 +1256,10 @@ int rbxInstance__newindex(lua_State* L) {
         goto INVALID_MEMBER;
 
     {
-    auto value = &instance->values[key];
+    auto value = &instance->values.at(key);
     auto property = value->property;
     if (property->route)
-        value = &instance->values[*property->route];
+        value = &instance->values.at(*property->route);
 
     if (property->internal)
         goto INVALID_MEMBER;
@@ -1374,7 +1427,7 @@ int rbxInstance__namecall(lua_State* L) {
 }
 
 std::shared_ptr<rbxInstance> newInstance(lua_State* L, const char* class_name, std::shared_ptr<rbxInstance> parent) {
-    std::shared_ptr<rbxClass> _class = rbxClass::class_map[class_name];
+    std::shared_ptr<rbxClass> _class = rbxClass::class_map.at(class_name);
     std::shared_ptr<rbxInstance> instance = std::make_shared<rbxInstance>(_class);
 
     lua_newtable(L);
@@ -1391,12 +1444,12 @@ std::shared_ptr<rbxInstance> newInstance(lua_State* L, const char* class_name, s
         for (auto& property : c->properties) {
             if (property.second->route)
                 continue;
-            instance->values[property.first] = property.second->default_value;
+            instance->values.try_emplace(property.first, property.second->default_value);
         }
         instance->methods.insert(c->methods.begin(), c->methods.end());
         for (size_t i = 0; i < c->events.size(); i++) {
             auto event = &c->events[i];
-            instance->events[event->name] = event;
+            instance->events.emplace(event->name, event);
             if (event->route)
                 continue;
             pushNewRBXScriptSignal(L, event->name.c_str());
@@ -1429,11 +1482,11 @@ std::shared_ptr<rbxInstance> cloneInstance(lua_State* L, std::shared_ptr<rbxInst
     while (c) {
         for (auto& property : c->properties) {
             if (!property.second->route)
-                instance->values[property.first].value = reference->values[property.first].value;
+                instance->values.at(property.first).value = reference->values.at(property.first).value;
         }
         c = c->superclass.get();
     }
-    instance->values[PROP_INSTANCE_PARENT].value = std::shared_ptr<rbxInstance>(nullptr);
+    instance->values.at(PROP_INSTANCE_PARENT).value = std::shared_ptr<rbxInstance>(nullptr);
 
     if (is_deep) {
         // FIXME: I think the fact that this function spends time with the lock unlocked is inheritly flawed.
@@ -1499,7 +1552,8 @@ namespace rbxInstance_datatype {
         const char* class_name = luaL_checkstring(L, 1);
         std::shared_ptr<rbxInstance> parent = lua_optinstance(L, 2);
 
-        if (rbxClass::class_map.find(class_name) == rbxClass::class_map.end()) {
+        auto class_it = rbxClass::class_map.find(class_name);
+        if (class_it == rbxClass::class_map.end()) {
             // std::string msg = "'";
             // msg.append(class_name) += '\'';
             // msg.append(" is not a valid class name");
@@ -1507,8 +1561,7 @@ namespace rbxInstance_datatype {
             luaL_error(L, "Unable to create an Instance of type \"%s\"", class_name);
         }
 
-        std::shared_ptr<rbxClass> _class = rbxClass::class_map[class_name];
-        if (_class->tags & rbxClass::NotCreatable)
+        if (class_it->second->tags & rbxClass::NotCreatable)
             luaL_error(L, "Unable to create an Instance of type \"%s\"", class_name);
 
         std::shared_ptr<rbxInstance> instance = newInstance(L, class_name, parent);
@@ -1530,7 +1583,7 @@ static int fr_getcallbackvalue(lua_State* L) {
         auto name = getInstanceValue<std::string>(instance, PROP_INSTANCE_NAME);
         luaL_error(L, "%s is not a valid member of %s \"%s\"", key, class_name.c_str(), name.c_str());
     }
-    auto value = &instance->values[key];
+    auto value = &instance->values.at(key);
 
     auto& wrapper = std::get<rbxCallback>(value->value);
     if (wrapper.index == -1)
@@ -1553,7 +1606,7 @@ static int fr_isscriptable(lua_State* L) {
         auto name = getInstanceValue<std::string>(instance, PROP_INSTANCE_NAME);
         luaL_error(L, "%s is not a valid member of %s \"%s\"", key, class_name.c_str(), name.c_str());
     }
-    auto value = &instance->values[key];
+    auto value = &instance->values.at(key);
     auto property = value->property;
 
     lua_pushboolean(L, !(property->tags & rbxProperty::NotScriptable));
@@ -1569,7 +1622,7 @@ static int fr_setscriptable(lua_State* L) {
         auto name = getInstanceValue<std::string>(instance, PROP_INSTANCE_NAME);
         luaL_error(L, "%s is not a valid member of %s \"%s\"", key, class_name.c_str(), name.c_str());
     }
-    auto value = &instance->values[key];
+    auto value = &instance->values.at(key);
     auto& property = value->property;
 
     const bool old = !(property->tags & rbxProperty::NotScriptable);
@@ -1626,11 +1679,13 @@ void rbxInstanceSetup(lua_State* L, std::string api_dump) {
 
     setup_enums(L);
 
+    #ifndef FROSTBYTE_HEADLESS
     pushFont(L, "Arimo", &Enum::enum_map.at("FontWeight").item_map.at("Regular"), &Enum::enum_map.at("FontStyle").item_map.at("Normal"));
     EngineFont default_font = *lua_checkfont(L, -1);
     lua_pop(L, 1);
+    #endif
 
-    std::map<std::string, std::string> superclass_map;
+    std::unordered_map<std::string, std::string> superclass_map;
 
     for (auto& class_json : api_json["Classes"]) {
         std::string class_name = class_json["Name"].template get<std::string>();
@@ -1640,8 +1695,12 @@ void rbxInstanceSetup(lua_State* L, std::string api_dump) {
         _class->name.assign(class_name);
 
         auto& superclass_json = class_json["Superclass"];
-        if (superclass_json.type() == json::value_t::string)
-            superclass_map.try_emplace(class_name, superclass_json.template get<std::string>());
+        if (superclass_json.type() == json::value_t::string) {
+            auto superclass = superclass_json.template get<std::string>();
+            // smh...
+            if (superclass != "<<<ROOT>>>")
+                superclass_map.try_emplace(class_name, superclass);
+        }
 
         for (auto& tag_json : class_json["Tags"]) {
             if (tag_json.type() == json::value_t::string) { // TODO: investigate when this isn't string (maybe just when Tags isn't not present?)
@@ -1737,8 +1796,10 @@ void rbxInstanceSetup(lua_State* L, std::string api_dump) {
                         property->default_value.value = Color{255, 255, 255, 255};
                     else if (type == "ContentId")
                         property->default_value.value = "";
+                    #ifndef FROSTBYTE_HEADLESS
                     else if (type == "Font")
                         property->default_value.value = default_font;
+                    #endif
                     else if (type == "TweenInfo")
                         property->default_value.value = TweenInfo();
                     else if (type == "ColorSequenceKeypoint")
@@ -1767,7 +1828,7 @@ void rbxInstanceSetup(lua_State* L, std::string api_dump) {
                     property->default_value.value = std::shared_ptr<rbxInstance>(nullptr);
                 }
 
-                _class->properties[member_name] = property;
+                _class->properties.try_emplace(member_name, property);
                 property->default_value.property = property;
             } else if (member_type == "Callback") {
                 std::shared_ptr<rbxProperty> property = std::make_shared<rbxProperty>();
@@ -1775,12 +1836,12 @@ void rbxInstanceSetup(lua_State* L, std::string api_dump) {
                 property->default_value = rbxValue();
                 property->default_value.value = rbxCallback { .index = -1 };
 
-                _class->properties[member_name] = property;
+                _class->properties.try_emplace(member_name, property);
                 property->default_value.property = property;
             } else if (member_type == "Function") {
                 rbxMethod method;
                 method.name = member_name;
-                method._class = _class;
+                method._class = class_name;
 
                 if (tags.type() == json::value_t::array) {
                     for (auto& tag_json : tags) {
@@ -1805,35 +1866,36 @@ void rbxInstanceSetup(lua_State* L, std::string api_dump) {
             }
         }
 
-        rbxClass::class_map[class_name] = _class;
+        rbxClass::class_map.try_emplace(class_name, _class);
     }
 
     for (auto& pair : superclass_map)
-        rbxClass::class_map[pair.first]->superclass = rbxClass::class_map[pair.second];
+        rbxClass::class_map.at(pair.first)->superclass = rbxClass::class_map.at(pair.second);
 
     superclass_map.clear();
 
-    rbxClass::class_map["Instance"]->methods.at("ClearAllChildren").func = rbxInstance_methods::clearAllChildren;
-    rbxClass::class_map["Instance"]->methods.at("Clone").func = rbxInstance_methods::clone;
-    rbxClass::class_map["Instance"]->methods.at("Destroy").func = rbxInstance_methods::destroy;
-    rbxClass::class_map["Instance"]->methods.at("FindFirstAncestor").func = rbxInstance_methods::findFirstAncestor;
-    rbxClass::class_map["Instance"]->methods.at("FindFirstAncestorOfClass").func = rbxInstance_methods::findFirstAncestorOfClass;
-    rbxClass::class_map["Instance"]->methods.at("FindFirstAncestorWhichIsA").func = rbxInstance_methods::findFirstAncestorWhichIsA;
-    rbxClass::class_map["Instance"]->methods.at("FindFirstChild").func = rbxInstance_methods::findFirstChild;
-    rbxClass::class_map["Instance"]->methods.at("FindFirstChildWhichIsA").func = rbxInstance_methods::findFirstChildWhichIsA;
-    rbxClass::class_map["Instance"]->methods.at("GetAttribute").func = rbxInstance_methods::getAttribute;
-    rbxClass::class_map["Instance"]->methods.at("GetAttributeChangedSignal").func = rbxInstance_methods::getAttributeChangedSignal;
-    rbxClass::class_map["Instance"]->methods.at("GetAttributes").func = rbxInstance_methods::getAttributes;
-    rbxClass::class_map["Instance"]->methods.at("SetAttribute").func = rbxInstance_methods::setAttribute;
-    rbxClass::class_map["Instance"]->methods.at("GetChildren").func = rbxInstance_methods::getChildren;
-    rbxClass::class_map["Instance"]->methods.at("GetDescendants").func = rbxInstance_methods::getDescendants;
-    rbxClass::class_map["Instance"]->methods.at("GetFullName").func = rbxInstance_methods::getFullName;
-    rbxClass::class_map["Object"]->methods.at("GetPropertyChangedSignal").func = rbxInstance_methods::getPropertyChangedSignal;
-    rbxClass::class_map["Object"]->methods.at("IsA").func = rbxInstance_methods::isA;
-    rbxClass::class_map["Instance"]->methods.at("IsDescendantOf").func = rbxInstance_methods::isDescendantOf;
-    rbxClass::class_map["Instance"]->methods.at("Remove").func = rbxInstance_methods::remove;
-    rbxClass::class_map["Instance"]->methods.at("WaitForChild").func = rbxInstance_methods::waitForChild;
-    // rbxClass::class_map["Instance"]->methods.at("QueryDescendants").func = rbxInstance_methods::queryDescendants;
+    rbxClass::class_map.at("Instance")->methods.at("ClearAllChildren").func = rbxInstance_methods::clearAllChildren;
+    rbxClass::class_map.at("Instance")->methods.at("Clone").func = rbxInstance_methods::clone;
+    rbxClass::class_map.at("Instance")->methods.at("Destroy").func = rbxInstance_methods::destroy;
+    rbxClass::class_map.at("Instance")->methods.at("FindFirstAncestor").func = rbxInstance_methods::findFirstAncestor;
+    rbxClass::class_map.at("Instance")->methods.at("FindFirstAncestorOfClass").func = rbxInstance_methods::findFirstAncestorOfClass;
+    rbxClass::class_map.at("Instance")->methods.at("FindFirstAncestorWhichIsA").func = rbxInstance_methods::findFirstAncestorWhichIsA;
+    rbxClass::class_map.at("Instance")->methods.at("FindFirstChild").func = rbxInstance_methods::findFirstChild;
+    rbxClass::class_map.at("Instance")->methods.at("FindFirstChildWhichIsA").func = rbxInstance_methods::findFirstChildWhichIsA;
+    rbxClass::class_map.at("Instance")->methods.at("GetAttribute").func = rbxInstance_methods::getAttribute;
+    rbxClass::class_map.at("Instance")->methods.at("GetAttributeChangedSignal").func = rbxInstance_methods::getAttributeChangedSignal;
+    rbxClass::class_map.at("Instance")->methods.at("GetAttributes").func = rbxInstance_methods::getAttributes;
+    rbxClass::class_map.at("Instance")->methods.at("SetAttribute").func = rbxInstance_methods::setAttribute;
+    rbxClass::class_map.at("Instance")->methods.at("GetChildren").func = rbxInstance_methods::getChildren;
+    rbxClass::class_map.at("Instance")->methods.at("GetDescendants").func = rbxInstance_methods::getDescendants;
+    rbxClass::class_map.at("Instance")->methods.at("GetFullName").func = rbxInstance_methods::getFullName;
+    rbxClass::class_map.at("Object")->methods.at("GetPropertyChangedSignal").func = rbxInstance_methods::getPropertyChangedSignal;
+    rbxClass::class_map.at("Object")->methods.at("IsA").func = rbxInstance_methods::isA;
+    rbxClass::class_map.at("Instance")->methods.at("IsDescendantOf").func = rbxInstance_methods::isDescendantOf;
+    rbxClass::class_map.at("Instance")->methods.at("Remove").func = rbxInstance_methods::remove;
+    rbxClass::class_map.at("Instance")->methods.at("WaitForChild").func = rbxInstance_methods::waitForChild;
+    // rbxClass::class_map.at("Instance")->methods.at("QueryDescendants").func = rbxInstance_methods::queryDescendants;
+    rbxClass::class_map.at("Instance")->newMethod("QueryDescendants", rbxInstance_methods::queryDescendants);
 
     // metatable
     userdata::newClassMetatable(L, userdata::Instance);
@@ -1878,7 +1940,7 @@ void rbxInstanceSetup(lua_State* L, std::string api_dump) {
     lua_setglobal(L, "workspace");
     lua_setglobal(L, "Workspace");
 
-    datamodel->values["Workspace"].value = workspace;
+    datamodel->values.at("Workspace").value = workspace;
 
     rbxInstance_Players_init(L, datamodel);
 
@@ -1893,7 +1955,7 @@ void rbxInstanceSetup(lua_State* L, std::string api_dump) {
     auto coregui = ServiceProvider::getService(L, datamodel, "CoreGui");
     hiddenui = cloneInstance(L, coregui);
     // TODO: we could easily just create a new class called HiddenUi
-    hiddenui->values[PROP_INSTANCE_NAME].value = "HiddenUi";
+    hiddenui->values.at(PROP_INSTANCE_NAME).value = "HiddenUi";
 
     rbxInstance_CoreGui_setup(L, coregui);
 

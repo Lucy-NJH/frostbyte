@@ -26,20 +26,22 @@ namespace rbxInstance_TweenBase_methods {
 }; // rbxInstance_TweenBase_methods
 
 void rbxInstance_TweenBase_init() {
-    rbxClass::class_map["TweenBase"]->constructor = [](lua_State* L, std::shared_ptr<rbxInstance> instance) {
+    auto& this_class = rbxClass::class_map.at("TweenBase");
+
+    this_class->constructor = [](lua_State* L, std::shared_ptr<rbxInstance> instance) {
         setInstanceValue(instance, L, "PlaybackState", &Enum::enum_map.at("PlaybackState").item_map.at("Begin"));
     };
-    rbxClass::class_map["TweenBase"]->destructor = [](rbxInstance* instance) {
+    this_class->destructor = [](rbxInstance* instance) {
         TweenObject* tween_object = (TweenObject*)instance->getValue<void*>("internal_Object");
         if (tween_object)
             tween_object->~TweenObject();
     };
 
-    rbxClass::class_map["TweenBase"]->methods["Cancel"].func = rbxInstance_TweenBase_methods::cancel;
-    rbxClass::class_map["TweenBase"]->methods["Play"].func = rbxInstance_TweenBase_methods::play;
-    rbxClass::class_map["TweenBase"]->methods["Pause"].func = rbxInstance_TweenBase_methods::pause;
+    this_class->methods.at("Cancel").func = rbxInstance_TweenBase_methods::cancel;
+    this_class->methods.at("Play").func = rbxInstance_TweenBase_methods::play;
+    this_class->methods.at("Pause").func = rbxInstance_TweenBase_methods::pause;
 
-    rbxClass::class_map["TweenBase"]->newInternalProperty("internal_Object", Primitive, { .value = (void*) nullptr });
+    this_class->newInternalProperty("internal_Object", Primitive, { .value = (void*) nullptr });
 }
 
 }; // namespace frostbyte

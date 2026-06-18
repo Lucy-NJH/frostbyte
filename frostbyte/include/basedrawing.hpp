@@ -1,5 +1,7 @@
 #pragma once
 
+#ifndef FROSTBYTE_HEADLESS
+
 #include "raylib.h"
 #include <string_view>
 
@@ -79,3 +81,5 @@ inline void drawingDrawCenteredText(Vector2* position, Font* font, float text_si
 #pragma GCC diagnostic pop
 
 }; // namespace frostbyte
+
+#endif

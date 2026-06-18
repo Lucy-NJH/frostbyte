@@ -128,12 +128,14 @@ void rbxInstance_DataModel_init(lua_State* L) {
     lua_newtable(L);
     lua_setfield(L, LUA_REGISTRYINDEX, TOCLOSEBINDS_KEY);
 
-    rbxClass::class_map["DataModel"]->methods["BindToClose"].func = rbxInstance_DataModel_methods::bindToClose;
-    rbxClass::class_map["DataModel"]->methods["HttpGetAsync"].func = rbxInstance_DataModel_methods::httpGetAsync;
-    rbxClass::class_map["DataModel"]->methods["IsLoaded"].func = rbxInstance_DataModel_methods::isLoaded;
-    rbxClass::class_map["DataModel"]->methods["Shutdown"].func = rbxInstance_DataModel_methods::shutdown;
+    auto& this_class = rbxClass::class_map.at("DataModel");
 
-    rbxClass::class_map["DataModel"]->newMethod("HttpGet", rbxInstance_DataModel_methods::httpGet);
+    this_class->methods.at("BindToClose").func = rbxInstance_DataModel_methods::bindToClose;
+    this_class->methods.at("HttpGetAsync").func = rbxInstance_DataModel_methods::httpGetAsync;
+    this_class->methods.at("IsLoaded").func = rbxInstance_DataModel_methods::isLoaded;
+    this_class->methods.at("Shutdown").func = rbxInstance_DataModel_methods::shutdown;
+
+    this_class->newMethod("HttpGet", rbxInstance_DataModel_methods::httpGet);
 }
 
 };

@@ -1,12 +1,16 @@
 #pragma once
 
-#include "raylib.h"
-
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 #include "lua.h"
+
+#ifdef FROSTBYTE_HEADLESS
+typedef void Font;
+#else
+#include "raylib.h"
+#endif
 
 namespace frostbyte {
 

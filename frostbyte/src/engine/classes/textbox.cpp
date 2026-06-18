@@ -30,11 +30,11 @@ namespace rbxInstance_TextBox_methods {
 }; // namespace rbxInstance_TextBox_methods
 
 void rbxInstance_TextBox_init() {
-    auto& this_class = rbxClass::class_map["TextBox"];
+    auto& this_class = rbxClass::class_map.at("TextBox");
 
-    this_class->methods["CaptureFocus"].func = rbxInstance_TextBox_methods::captureFocus;
-    this_class->methods["IsFocused"].func = rbxInstance_TextBox_methods::isFocused;
-    this_class->methods["ReleaseFocus"].func = rbxInstance_TextBox_methods::releaseFocus;
+    this_class->methods.at("CaptureFocus").func = rbxInstance_TextBox_methods::captureFocus;
+    this_class->methods.at("IsFocused").func = rbxInstance_TextBox_methods::isFocused;
+    this_class->methods.at("ReleaseFocus").func = rbxInstance_TextBox_methods::releaseFocus;
 }
 
 }; // namespace frostbyte

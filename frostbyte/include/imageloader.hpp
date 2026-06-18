@@ -1,5 +1,7 @@
 #pragma once
 
+#ifndef FROSTBYTE_HEADLESS
+
 #include <map>
 #include <string>
 
@@ -21,3 +23,5 @@ public:
 };
 
 }; // namespace frostbyte
+
+#endif

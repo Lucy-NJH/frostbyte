@@ -1,4 +1,5 @@
 #include "libraries/drawentrylib.hpp"
+#ifndef FROSTBYTE_HEADLESS
 
 #include "basedrawing.hpp"
 #include "common.hpp"
@@ -946,3 +947,5 @@ void DrawEntry::render() {
 }
 
 }; // namespace frostbyte
+
+#endif

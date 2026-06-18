@@ -13,7 +13,6 @@
 #include <vector>
 
 #include "common.hpp"
-#include "raylib.h"
 
 #include "engine/datatypes/brickcolor.hpp"
 #include "engine/datatypes/colorsequence.hpp"
@@ -52,7 +51,7 @@ enum Type_PrimitiveType {
 class rbxClass;
 
 struct rbxMethod {
-    std::shared_ptr<rbxClass> _class;
+    std::string _class;
     std::string name;
     std::optional<std::string> route = std::nullopt;
     lua_CFunction func = nullptr;
@@ -68,7 +67,7 @@ class rbxValue;
 
 class rbxClass {
 public:
-    static std::map<std::string, std::shared_ptr<rbxClass>> class_map;
+    static std::unordered_map<std::string, std::shared_ptr<rbxClass>> class_map;
     static std::vector<std::string> valid_class_names;
     static std::vector<std::string> valid_services;
 
@@ -80,8 +79,8 @@ public:
     uint8_t tags = 0;
 
     std::shared_ptr<rbxClass> superclass;
-    std::map<std::string, std::shared_ptr<rbxProperty>> properties;
-    std::map<std::string, rbxMethod> methods;
+    std::unordered_map<std::string, std::shared_ptr<rbxProperty>> properties;
+    std::unordered_map<std::string, rbxMethod> methods;
     std::vector<rbxEvent> events;
     // TODO: replace std::function with function pointers
     std::function<void(lua_State* L, std::shared_ptr<rbxInstance> instance)> constructor = nullptr;
@@ -92,6 +91,7 @@ public:
 
     void newMethod(const char* name, lua_CFunction func, lua_Continuation cont = nullptr) {
         rbxMethod method;
+        method._class = this->name;
         method.name = name;
         method.func = func;
         method.cont = cont;
@@ -155,11 +155,11 @@ public:
     // static std::shared_mutex instance_list_mutex;
 
     std::shared_ptr<rbxClass> _class;
-    std::map<std::string, rbxValue> values;
-    std::map<std::string, rbxMethod> methods;
-    std::map<std::string, rbxEvent*> events;
+    std::unordered_map<std::string, rbxValue> values;
+    std::unordered_map<std::string, rbxMethod> methods;
+    std::unordered_map<std::string, rbxEvent*> events;
     std::vector<std::shared_ptr<rbxInstance>> children;
-    std::map<std::string, rbxValueVariant> attributes;
+    std::unordered_map<std::string, rbxValueVariant> attributes;
 
     // std::shared_mutex values_mutex;
     // std::shared_mutex children_mutex;

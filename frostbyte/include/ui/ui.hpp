@@ -5,8 +5,12 @@
 
 #include "scriptlanguage.hpp"
 
+#ifdef FROSTBYTE_HEADLESS
+#include "renderstubs.hpp"
+#else
 #include "imgui.h"
 #include "raylib.h"
+#endif
 
 #include <string>
 
@@ -18,6 +22,7 @@ extern Vector2 gui_inset_bottomright;
 
 // window items
 
+extern bool httpget_synchronous_argument;
 extern bool runservice_is_server;
 extern bool runservice_is_studio;
 
@@ -34,11 +39,11 @@ extern bool enable_user_input_service;
 extern bool enable_run_service;
 extern bool enable_tween_service;
 extern bool enable_gui_object_rendering;
-extern bool httpget_synchronous_argument;
 extern bool menu_image_explorer_open;
 extern bool menu_font_explorer_open;
 extern bool menu_table_explorer_open;
 
+#ifndef FROSTBYTE_HEADLESS
 int imgui_inputTextCallback(ImGuiInputTextCallbackData* data);
 
 bool ImGui_STDString(const char* label, std::string& string);
@@ -54,5 +59,6 @@ void ImGui_DragUDim2(const char* name, UDim2& udim2, float speed = 0.6f, float m
 
 bool ImGui_ThreadIdentityCombo(int* id);
 void ImGui_ScriptLanguageCombo(ScriptLanguage** language);
+#endif
 
 }; // namespace frostbyte

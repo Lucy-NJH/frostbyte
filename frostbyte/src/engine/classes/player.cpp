@@ -13,14 +13,16 @@ namespace rbxInstance_Player_methods {
 }; // namespace rbxInstance_Player_methods
 
 void rbxInstance_Player_init(lua_State *L, std::shared_ptr<rbxInstance> players_service) {
-    rbxClass::class_map["Player"]->methods["GetMouse"].func = rbxInstance_Player_methods::getMouse;
+    auto& this_class = rbxClass::class_map.at("Player");
+
+    this_class->methods.at("GetMouse").func = rbxInstance_Player_methods::getMouse;
 
     rbxPlayer::localplayer = newInstance(L, "Player", players_service);
+    rbxPlayer::localplayer->values.at(PROP_INSTANCE_NAME).value = "LocalPlayer";
+
+    players_service->values.at("LocalPlayer").value = rbxPlayer::localplayer;
+
     rbxPlayer::localmouse = newInstance(L, "Mouse");
-
-    rbxPlayer::localplayer->values[PROP_INSTANCE_NAME].value = "LocalPlayer";
-
-    players_service->values["LocalPlayer"].value = rbxPlayer::localplayer;
 }
 
 }; // namespace frostbyte

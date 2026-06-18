@@ -648,9 +648,10 @@ namespace rbxInstance_TweenService_static_methods {
 }; // namespace rbxInstance_TweenService_methods
 
 void rbxInstance_TweenService_init() {
-    rbxClass::class_map["TweenService"]->methods["Create"].func = rbxInstance_TweenService_methods::create;
+    auto& this_class = rbxClass::class_map.at("TweenService");
 
-    rbxClass::class_map["TweenService"]->methods["GetValue"].func = rbxInstance_TweenService_static_methods::getValue;
+    this_class->methods.at("Create").func = rbxInstance_TweenService_methods::create;
+    this_class->methods.at("GetValue").func = rbxInstance_TweenService_static_methods::getValue;
 }
 
 }; // namespace frostbyte

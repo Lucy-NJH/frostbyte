@@ -59,7 +59,9 @@ namespace rbxInstance_StarterGui_methods {
 }; // rbxInstance_StarterGui_methods
 
 void rbxInstance_StarterGui_init(lua_State* L) {
-    rbxClass::class_map["StarterGui"]->methods["SetCore"].func = rbxInstance_StarterGui_methods::setCore;
+    auto& this_class = rbxClass::class_map.at("StarterGui");
+
+    this_class->methods.at("SetCore").func = rbxInstance_StarterGui_methods::setCore;
 
     notification_frame_title_template = newInstance(L, "TextLabel");
     setInstanceValue<std::string>(notification_frame_title_template, L, PROP_INSTANCE_NAME, "NotificationTitle", true);

@@ -1,7 +1,8 @@
 #pragma once
 
 #include "lua.h"
-#include <raylib.h>
+
+#include "renderstubs.hpp"
 
 namespace frostbyte {
 

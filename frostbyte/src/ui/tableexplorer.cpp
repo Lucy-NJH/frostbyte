@@ -1,4 +1,5 @@
 #include "ui/tableexplorer.hpp"
+#ifndef FROSTBYTE_HEADLESS
 #include "ui/functionexplorer.hpp"
 #include "ui/ui.hpp"
 
@@ -206,3 +207,5 @@ void UI_TableExplorer_render(lua_State *L) {
 }
 
 }; // namespace frostbyte
+
+#endif

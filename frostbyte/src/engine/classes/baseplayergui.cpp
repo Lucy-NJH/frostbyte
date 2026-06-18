@@ -1,4 +1,5 @@
 #include "engine/classes/baseplayergui.hpp"
+#ifndef FROSTBYTE_HEADLESS
 #include "engine/classes/camera.hpp"
 #include "engine/classes/guibutton.hpp"
 #include "engine/classes/instance.hpp"
@@ -12,7 +13,6 @@
 
 #include "lua.h"
 #include "lualib.h"
-#include "raylib.h"
 #include "rlgl.h"
 
 #include <algorithm>
@@ -458,7 +458,21 @@ void rbxInstance_BasePlayerGui_addStorageList(std::initializer_list<std::shared_
 }
 
 void rbxInstance_BasePlayerGui_init(lua_State *L) {
-    rbxClass::class_map["BasePlayerGui"]->methods["GetGuiObjectsAtPosition"].func = rbxInstance_BasePlayerGui_methods::getGuiObjectsAtPosition;
+    auto& this_class = rbxClass::class_map.at("BasePlayerGui");
+
+    this_class->methods.at("GetGuiObjectsAtPosition").func = rbxInstance_BasePlayerGui_methods::getGuiObjectsAtPosition;
 }
 
 };
+
+#else
+namespace frostbyte {
+
+void rbxInstance_BasePlayerGui_addStorageList(std::initializer_list<std::shared_ptr<rbxInstance>> initial_gui_storage_list) {
+}
+
+void rbxInstance_BasePlayerGui_init(lua_State *L) {
+}
+
+}; // namespace frostbyte
+#endif

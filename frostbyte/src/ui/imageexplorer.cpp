@@ -1,5 +1,7 @@
 #include "ui/imageexplorer.hpp"
 
+#ifndef FROSTBYTE_HEADLESS
+
 #include "imageloader.hpp"
 #include "imgui.h"
 
@@ -58,3 +60,5 @@ void UI_ImageExplorer_cleanup() {
 }
 
 }; // namespace frostbyte
+
+#endif

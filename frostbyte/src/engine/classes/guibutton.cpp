@@ -5,7 +5,7 @@ namespace frostbyte {
 std::map<rbxInstance*, bool> auto_button_color_map;
 
 void rbxInstance_GuiButton_init() {
-    auto& this_class = rbxClass::class_map["GuiButton"];
+    auto& this_class = rbxClass::class_map.at("GuiButton");
 
     this_class->constructor = [](lua_State* L, std::shared_ptr<rbxInstance> instance) {
         setInstanceValue(instance, L, "AutoButtonColor", true, true);
