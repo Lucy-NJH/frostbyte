@@ -2,17 +2,35 @@
 #include "common.hpp"
 #include "engine/classes/instance.hpp"
 
+#include <random>
+
 #include "lapi.h"
 #include "lgc.h"
 #include "lobject.h"
 #include "ltable.h"
 #include "lualib.h"
 
-#include "uuid_v4.h"
-
 namespace frostbyte {
 
-UUIDv4::UUIDGenerator<std::mt19937_64> uuid_generator;
+std::mt19937_64 rng_device;
+std::string generateUUID() {
+    std::array<uint8_t, 16> bytes;
+    std::uniform_int_distribution<uint32_t> dist(0, 255);
+    for (auto& b : bytes)
+        b = static_cast<uint8_t>(dist(rng_device));
+
+    bytes[6] = (bytes[6] & 0x0F) | 0x40;
+    bytes[8] = (bytes[8] & 0x3F) | 0x80;
+
+    std::ostringstream oss;
+    oss << std::hex << std::setfill('0');
+    for (int i = 0; i < 16; ++i) {
+        oss << std::setw(2) << static_cast<int>(bytes[i]);
+        if (i == 3 || i == 5 || i == 7 || i == 9)
+            oss << '-';
+    }
+    return oss.str();
+}
 
 int pushJsonToLua(lua_State* L, json& json_object) {
     switch (json_object.type()) {
@@ -163,18 +181,16 @@ void luaToJson(luaL_Strbuf* buf, int index) {
 namespace rbxInstance_HttpService_methods {
     static int generateGUID(lua_State* L) {
         lua_checkinstance(L, 1, "HttpService");
-
         const bool wrap = luaL_optboolean(L, 2, true);
 
-        UUIDv4::UUID uuid = uuid_generator.getUUID();
-        std::string str = uuid.str();
+        std::string uuid = generateUUID();
 
         if (wrap) {
-            str.insert(str.begin(), '{');
-            str.push_back('}');
+            uuid.insert(uuid.begin(), '{');
+            uuid.push_back('}');
         }
 
-        lua_pushstring(L, str.c_str());
+        lua_pushstring(L, uuid.c_str());
         return 1;
     }
 

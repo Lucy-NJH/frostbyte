@@ -132,8 +132,12 @@ std::string& Console::getWholeContent() {
 void Console::log(std::string message, Message::Type type) {
     std::lock_guard lock(mutex);
     messages.push_back({ .type = type, .content = message });
+    #ifdef FROSTBYTE_HEADLESS
+        printf("%s %.*s\n", getMessageTypeString(type), (int) message.size(), message.c_str());
+    #else
     if (type == Message::DEBUG)
         printf("[DEBUG] %.*s\n", (int) message.size(), message.c_str());
+    #endif
 }
 
 void Console::info(std::string message) {
