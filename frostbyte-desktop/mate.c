@@ -17,7 +17,7 @@ int main(int argc, char** argv) {
 
     ExecutableOptions executable_options = {
         .output = "frostbyte",
-        .flags = "-std=c++17 -Wall -Wno-psabi -Werror -g -march=native -static-libstdc++ -static-libgcc"
+        .flags = "-std=c++17 -Wall -Wno-psabi -Werror -g -static-libstdc++ -static-libgcc"
     };
     Executable executable = CreateExecutable(executable_options);
 

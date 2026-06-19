@@ -1,3 +1,5 @@
+#include <atomic>
+#include <csignal>
 #include <cstdio>
 #include <cstring>
 #include <fstream>
@@ -7,6 +9,7 @@
 #include "frostbyte.hpp"
 
 // frostbyte /
+#include "scriptlanguage.hpp"
 #include "taskscheduler.hpp"
 
 // frostbyte / engine / classes
@@ -35,7 +38,7 @@ int handleRecordOption(const char* option, const char*& arg, bool can_be_empty =
 std::string readFileToString(const char* file_path) {
     std::ifstream file(file_path);
     if (!file)
-        throw std::runtime_error("failed to open file");
+        throw std::runtime_error(std::string("failed to open file ").append(file_path));
 
     std::string result;
     std::string buffer;
@@ -53,8 +56,15 @@ void displayHelp(const char* filename = "frostbyte") {
     printf("frostbyte-server by techhog\n"
         "usage: %s [options]\n\n"
         "options:\n"
-        "  -h           -  displays this page\n"
-        "  --nosandbox  -  disables sandboxing (Luau will perform less optimizations, but functions like getgenv need this flag to work)\n"
+        "  -h                   -  displays this page\n"
+        "  --nosandbox          -  disables sandboxing (Luau will perform less optimizations, but functions like getgenv need this flag to work)\n"
+        "  --script=FILE        -  run a script from a file\n"
+        "  --code=CODE          -  run a script CODE\n"
+        "  --language=LANGUAGE  -  the language scripts will use\n"
+        "\nlanguage choices (case sensitive):\n"
+        "  luau (default)\n"
+        "  moonscript\n"
+        "  clue\n"
     , filename);
 }
 
@@ -74,6 +84,13 @@ void tryRunCode(lua_State* L, const char* name, const char* code, size_t code_le
     }
 }
 
+std::atomic<bool> stop(false);
+
+void handle_sigint(int) {
+    stop = true;
+    frostbyte::Frostbyte::cleanup(false);
+}
+
 int main(int argc, char** argv) {
     if (argc < 1) {
         displayHelp();
@@ -82,6 +99,10 @@ int main(int argc, char** argv) {
 
     frostbyte::FrostbyteConfiguration configuration;
 
+    frostbyte::ScriptLanguage* input_language = &frostbyte::ScriptLanguage::Luau;
+    const char* input_file_path = nullptr;
+    const char* input_code = nullptr;
+
     for (unsigned i = 1; i < (unsigned) argc; i++) {
         const char* arg = argv[i];
         if (strequal(arg, "-h") || strequal(arg, "--help")) {
@@ -89,7 +110,30 @@ int main(int argc, char** argv) {
             return 0;
         } else if (strequal(arg, "--nosandbox"))
             configuration.sandbox_enabled = false;
-        else {
+        else if (!handleRecordOption("--script", arg)) {
+            if (input_code) {
+                fprintf(stderr, "ERROR: you cannot pass both --script and --code\n");
+                return 1;
+            }
+            input_file_path = arg;
+        } else if (!handleRecordOption("--code", arg)) {
+            if (input_file_path) {
+                fprintf(stderr, "ERROR: you cannot pass both --script and --code\n");
+                return 1;
+            }
+            input_code = arg;
+        } else if (!handleRecordOption("--language", arg)) {
+            if (strequal(arg, "luau"))
+                input_language = &frostbyte::ScriptLanguage::Luau;
+            else if (strequal(arg, "moonscript"))
+                input_language = &frostbyte::ScriptLanguage::MoonScript;
+            else if (strequal(arg, "clue"))
+                input_language = &frostbyte::ScriptLanguage::Clue;
+            else {
+                fprintf(stderr, "ERROR: unsupported language '%s'; expected luau, moonscript, or clue\n", arg);
+                return 1;
+            }
+        } else {
             fprintf(stderr, "ERROR: unrecognized option '%s'\n", arg);
             return 1;
         }
@@ -128,16 +172,30 @@ int main(int argc, char** argv) {
     frostbyte::Frostbyte::endRender();
     frostbyte::Frostbyte::postRender();
 
-    std::string input;
-    input.reserve(50);
+    struct sigaction action{};
+    action.sa_handler = handle_sigint;
+    sigemptyset(&action.sa_mask);
+    action.sa_flags = 0;
 
-    while (!frostbyte::DataModel::shutdown) {
-        printf("Enter code (or type exit): ");
-        std::getline(std::cin, input);
-        if (input == "exit")
-            break;
+    sigaction(SIGINT, &action, nullptr);
 
-        tryRunCode(userL, "code", input.c_str(), input.size());
+    if (input_file_path) {
+        std::string contents = readFileToString(input_file_path);
+        tryRunCode(userL, input_file_path, contents.c_str(), contents.length(), input_language);
+    } else if (input_code)
+        tryRunCode(userL, "code", input_code, strlen(input_code), input_language);
+    else {
+        std::string input;
+        input.reserve(50);
+
+        while (!stop && !frostbyte::DataModel::shutdown) {
+            printf("Enter code (or type exit): ");
+            std::getline(std::cin, input);
+            if (input == "exit")
+                break;
+
+            tryRunCode(userL, "code", input.c_str(), input.size(), input_language);
+        }
     }
 
     frostbyte::Frostbyte::cleanup(false);

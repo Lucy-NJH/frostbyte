@@ -37,24 +37,6 @@
 
 #define strequal(str1, str2) (strcmp(str1, str2) == 0)
 
-int handleRecordOption(const char* option, const char*& arg, bool can_be_empty = false) {
-    size_t option_length = strlen(option);
-
-    if (strncmp(arg, option, option_length) != 0)
-        return 1;
-
-    if (strlen(arg) == option_length || arg[option_length] != '=') {
-        fprintf(stderr, "ERROR: %s expects an equals sign\n", option);
-        return 1;
-    } else if (!can_be_empty && strlen(arg) < option_length + 2) {
-        fprintf(stderr, "ERROR: %s expects a value after the equals sign\n", option);
-        return 1;
-    }
-
-    arg += option_length + 1;
-    return 0;
-}
-
 std::string readFileToString(const char* file_path) {
     std::ifstream file(file_path);
     if (!file)

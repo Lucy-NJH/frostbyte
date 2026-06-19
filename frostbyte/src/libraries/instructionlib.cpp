@@ -478,6 +478,7 @@ void stephook(lua_State* L, lua_Debug* ar) {
 void onEnableStephookChange(lua_State* L) {
     // TODO: this should also be based on how many connections there are to the signal, if possible
     if (enable_stephook)
+        // TODO: it would be nice to have a list of callbacks to call instead of just overwriting debugstep in case we want to use multiple callbacks
         lua_callbacks(L)->debugstep = stephook;
     else
         lua_callbacks(L)->debugstep = nullptr;
