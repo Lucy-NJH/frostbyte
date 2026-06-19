@@ -5,9 +5,6 @@
 [submodule "frostbyte/dependencies/luau"]
 	path = frostbyte/dependencies/luau
 	url = https://github.com/luau-lang/luau.git
-[submodule "frostbyte/dependencies/uuid_v4"]
-	path = frostbyte/dependencies/uuid_v4
-	url = https://github.com/crashoz/uuid_v4.git
 [submodule "frostbyte/dependencies/json"]
 	path = frostbyte/dependencies/json
 	url = https://github.com/nlohmann/json.git
