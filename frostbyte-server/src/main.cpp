@@ -198,7 +198,8 @@ int main(int argc, char** argv) {
         }
     }
 
-    frostbyte::Frostbyte::cleanup(false);
+    if (!stop)
+        frostbyte::Frostbyte::cleanup(false);
 
     return 0;
 }
