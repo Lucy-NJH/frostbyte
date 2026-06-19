@@ -70,8 +70,12 @@ jobs:
           fi
       - name: build frostbyte
         run: cd frostbyte && gcc -o mate mate.c && ./mate ../frostbyte-desktop/dependencies/rlImGui
+      - name: build frostbyte headless
+        run: cd frostbyte && ./mate --headless
       - name: build frostbyte-desktop
         run: cd frostbyte-desktop && gcc -o mate mate.c && ./mate ../frostbyte
+      - name: build frostbyte-server
+        run: cd frostbyte-server && gcc -o mate mate.c && ./mate ../frostbyte
       - name: create timestamp
         id: timestamp
         run: echo "value=$(date +'%F_%H-%M-%S')" >> $GITHUB_OUTPUT
@@ -88,7 +92,9 @@ jobs:
           body: ${{ github.sha }}
           draft: false
           prerelease: true
-          files: frostbyte-desktop/build/frostbyte
+          files: |
+            frostbyte-desktop/build/frostbyte
+            frostbyte-server/build/frostbyte-server
           token: ${{ secrets.GITHUB_TOKEN }}
     permissions:
       contents: write
