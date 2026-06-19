@@ -11,6 +11,3 @@
 [submodule "frostbyte-desktop/dependencies/rlImGui"]
 	path = frostbyte-desktop/dependencies/rlImGui
 	url = https://github.com/raylib-extras/rlImGui.git
-[submodule "frostbyte-desktop/dependencies/ImGuiFileDialog"]
-	path = frostbyte-desktop/dependencies/ImGuiFileDialog
-	url = https://github.com/frostbyte-engine/ImGuiFileDialog.git
