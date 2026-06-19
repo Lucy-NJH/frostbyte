@@ -76,9 +76,7 @@ void writeStringToFile(const char* file_path, std::string_view contents) {
 
 void tryRunCode(lua_State* L, const char* name, const char* code, size_t code_length, frostbyte::ScriptLanguage* language = nullptr, const frostbyte::ThreadIdentity* identity = nullptr) {
     try {
-        frostbyte::TaskScheduler::startCodeOnNewThread(L, name, code, code_length, language, identity, [] (std::string error) {
-            frostbyte::Console::ScriptConsole.error(error);
-        });
+        frostbyte::TaskScheduler::startCodeOnNewThread(L, name, code, code_length, language, identity);
     } catch(std::exception& e) {
         frostbyte::Console::ScriptConsole.error(e.what());
     }
@@ -155,7 +153,11 @@ int main(int argc, char** argv) {
     lua_State* L = frostbyte::Frostbyte::L;
     lua_State* appL = frostbyte::Frostbyte::appL;
 
-    lua_State* userL = frostbyte::TaskScheduler::newThread(L, [] (std::string error) { frostbyte::Console::ScriptConsole.error(error); });
+    lua_State* userL = frostbyte::TaskScheduler::newThread(L, [] (std::string error) {
+        if (!error.empty() && error.at(error.size() - 1) == '\n')
+            error.erase(error.end() - 1);
+        frostbyte::Console::ScriptConsole.error(error);
+    });
     lua_pop(L, 1);
     frostbyte::Console::ScriptConsole.debugf("user state: %p", userL);
 
@@ -188,6 +190,7 @@ int main(int argc, char** argv) {
         std::string input;
         input.reserve(50);
 
+        // TODO: use isocline
         while (!stop && !frostbyte::DataModel::shutdown) {
             printf("Enter code (or type exit): ");
             std::getline(std::cin, input);
