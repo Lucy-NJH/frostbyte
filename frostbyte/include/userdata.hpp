@@ -18,6 +18,8 @@ namespace frostbyte {
             X(NumberRange)             \
             X(NumberSequenceKeypoint)  \
             X(NumberSequence)          \
+            X(Path2DControlPoint)      \
+            X(Random)                  \
             X(RBXScriptConnection)     \
             X(RBXScriptSignal)         \
             X(Rect)                    \

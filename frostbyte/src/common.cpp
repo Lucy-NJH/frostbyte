@@ -312,10 +312,10 @@ std::string getStackMessage(lua_State* L) {
     return message;
 }
 
-void consoleLog(lua_State* L, Console::Message::Type type, std::string message) {
+void consoleLog(lua_State* L, Console::Message::Type type, std::string_view message) {
     auto& console = getTask(L)->console;
     if (print_stdout && console->id != Tests)
-        printf("%s %.*s\n", Console::getMessageTypeString(type), static_cast<int>(message.size()), message.c_str());
+        printf("%s %.*s\n", Console::getMessageTypeString(type), static_cast<int>(message.size()), message.data());
     else
         console->log(message, type);
 }

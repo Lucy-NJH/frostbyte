@@ -129,27 +129,27 @@ std::string& Console::getWholeContent() {
     return whole_content;
 }
 
-void Console::log(std::string message, Message::Type type) {
+void Console::log(std::string_view message, Message::Type type) {
     std::lock_guard lock(mutex);
-    messages.push_back({ .type = type, .content = message });
+    messages.push_back({ .type = type, .content = std::string(message) });
     #ifdef FROSTBYTE_HEADLESS
-        printf("%s %.*s\n", getMessageTypeString(type), (int) message.size(), message.c_str());
+        printf("%s %.*s\n", getMessageTypeString(type), (int) message.size(), message.data());
     #else
     if (type == Message::DEBUG)
-        printf("[DEBUG] %.*s\n", (int) message.size(), message.c_str());
+        printf("[DEBUG] %.*s\n", (int) message.size(), message.data());
     #endif
 }
 
-void Console::info(std::string message) {
+void Console::info(std::string_view message) {
     log(message, Message::INFO);
 }
-void Console::warning(std::string message) {
+void Console::warning(std::string_view message) {
     log(message, Message::WARNING);
 }
-void Console::error(std::string message) {
+void Console::error(std::string_view message) {
     log(message, Message::ERROR);
 }
-void Console::debug(std::string message) {
+void Console::debug(std::string_view message) {
     log(message, Message::DEBUG);
 }
 

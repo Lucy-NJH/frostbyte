@@ -23,6 +23,8 @@
 #include "engine/datatypes/numberrange.hpp"
 #include "engine/datatypes/numbersequence.hpp"
 #include "engine/datatypes/numbersequencekeypoint.hpp"
+#include "engine/datatypes/path2dcontrolpoint.hpp"
+#include "engine/datatypes/random.hpp"
 #include "engine/datatypes/rbxscriptsignal.hpp"
 #include "engine/datatypes/rect.hpp"
 #include "engine/datatypes/tweeninfo.hpp"
@@ -187,6 +189,8 @@ void Frostbyte::initialize(FrostbyteConfiguration configuration) {
     open_numberrangelib(L);
     open_numbersequencekeypointlib(L);
     open_numbersequencelib(L);
+    open_path2dcontrolpointlib(L);
+    open_randomlib(L);
     open_rectlib(L);
     open_udimlib(L);
     open_udim2lib(L);

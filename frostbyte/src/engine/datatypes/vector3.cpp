@@ -46,7 +46,19 @@ Vector3* lua_checkvector3(lua_State* L, int narg) {
 static int Vector3__tostring(lua_State* L) {
     Vector3* vector3 = lua_checkvector3(L, 1);
 
-    lua_pushfstringL(L, "%.f, %.f, %.f", vector3->x, vector3->y, vector3->z);
+    char xbuf[LUAI_MAXNUM2STR];
+    char ybuf[LUAI_MAXNUM2STR];
+    char zbuf[LUAI_MAXNUM2STR];
+
+    char* xend = luai_num2str(xbuf, vector3->x);
+    char* yend = luai_num2str(ybuf, vector3->y);
+    char* zend = luai_num2str(zbuf, vector3->z);
+
+    xbuf[xend - xbuf] = 0;
+    ybuf[yend - ybuf] = 0;
+    zbuf[zend - zbuf] = 0;
+
+    lua_pushfstringL(L, "%s, %s, %s", xbuf, ybuf, zbuf);
     return 1;
 }
 

@@ -197,7 +197,17 @@ int main(int argc, char** argv) {
             if (input == "exit")
                 break;
 
+            size_t original_thread_count = frostbyte::TaskScheduler::thread_list.size();
+
             tryRunCode(userL, "code", input.c_str(), input.size(), input_language);
+
+            // TODO: have a task finished callback instead of waiting for thread list size
+            while (frostbyte::TaskScheduler::thread_list.size() != original_thread_count) {
+                frostbyte::Frostbyte::preRender();
+                frostbyte::Frostbyte::beginRender();
+                frostbyte::Frostbyte::endRender();
+                frostbyte::Frostbyte::postRender();
+            }
         }
     }
 

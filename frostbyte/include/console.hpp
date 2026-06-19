@@ -54,12 +54,12 @@ public:
     // NOTE: not thread-safe
     std::string& getWholeContent();
 
-    void log(std::string message, Message::Type type);
+    void log(std::string_view message, Message::Type type);
 
-    void info(std::string message);
-    void warning(std::string message);
-    void error(std::string message);
-    void debug(std::string message);
+    void info(std::string_view message);
+    void warning(std::string_view message);
+    void error(std::string_view message);
+    void debug(std::string_view message);
 
     void LUA_PRINTF_ATTR(3, 4) logf(Message::Type type, const char* fmt, ...);
     void LUA_PRINTF_ATTR(2, 3) debugf(const char* fmt, ...);
