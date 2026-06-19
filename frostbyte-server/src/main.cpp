@@ -133,7 +133,7 @@ int main(int argc, char** argv) {
                 fprintf(stderr, "ERROR: unsupported language '%s'; expected luau, moonscript, or clue\n", arg);
                 return 1;
             }
-        } else {
+        } else if (*arg) {
             fprintf(stderr, "ERROR: unrecognized option '%s'\n", arg);
             return 1;
         }

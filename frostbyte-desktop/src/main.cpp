@@ -607,7 +607,7 @@ int main(int argc, char** argv) {
             return 0;
         } else if (strequal(arg, "--nosandbox"))
             configuration.sandbox_enabled = false;
-        else {
+        else if (*arg) {
             fprintf(stderr, "ERROR: unrecognized option '%s'\n", arg);
             return 1;
         }
