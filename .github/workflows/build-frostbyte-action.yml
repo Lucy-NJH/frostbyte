@@ -30,11 +30,11 @@ jobs:
             libwayland-dev \
             libxkbcommon-dev \
             libpsl-dev
-      - name: update submodules
-        run: git submodule update --init --recursive
       - name: build frostbyte dependencies
         run: |
           if [ ! -f "frostbyte/dependencies/built.txt" ]; then
+            git submodule update --init --recursive
+
             pushd frostbyte/dependencies
 
             echo "configuring curl"
