@@ -194,6 +194,7 @@ lua_State* TaskScheduler::newThread(lua_State* L, Feedback feedback, OnKill on_k
     Task* task = getTask(thread);
     task->ref = lua_ref(L, -1);
 
+    assert(feedback);
     task->feedback = feedback;
     task->on_kill = on_kill;
 
@@ -302,6 +303,13 @@ void TaskScheduler::startFunctionOnNewThread(lua_State* L, Feedback feedback, in
 }
 
 void TaskScheduler::startCodeOnNewThread(lua_State* L, const char* chunk_name, const char* code, size_t code_size, ScriptLanguage* language, const ThreadIdentity* identity, Feedback feedback, OnKill on_kill, Console* console) {
+    if (!feedback) {
+        auto parent_task = getTask(L);
+        assert(parent_task);
+        feedback = parent_task->feedback;
+    }
+    assert(feedback);
+
     std::string code_str(code, code_size);
 
     if (language)
