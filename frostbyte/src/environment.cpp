@@ -197,7 +197,10 @@ static int fr_wait(lua_State* L) {
 }
 
 static int fr_gcstep(lua_State* L) {
-    lua_gc(L, LUA_GCSTEP, 0);
+    int data = luaL_optinteger(L, 1, 64);
+    if (data < 0)
+        luaL_argerror(L, 1, "count cannot be less than 0");
+    lua_gc(L, LUA_GCSTEP, data);
     return 0;
 }
 static int fr_gcfull(lua_State* L) {

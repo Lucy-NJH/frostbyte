@@ -1,4 +1,5 @@
 -std=c++17
+-DFROSTBYTE_HEADLESS
 
 -Iinclude
 -I../frostbyte/include

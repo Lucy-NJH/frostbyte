@@ -74,9 +74,20 @@ void writeStringToFile(const char* file_path, std::string_view contents) {
     file << contents;
 }
 
+void gameCycle() {
+    frostbyte::Frostbyte::preRender();
+    frostbyte::Frostbyte::beginRender();
+    frostbyte::Frostbyte::endRender();
+    frostbyte::Frostbyte::postRender();
+
+    lua_gc(frostbyte::Frostbyte::L, LUA_GCCOLLECT, 64);
+}
+
 void tryRunCode(lua_State* L, const char* name, const char* code, size_t code_length, frostbyte::ScriptLanguage* language = nullptr, const frostbyte::ThreadIdentity* identity = nullptr) {
     try {
-        frostbyte::TaskScheduler::startCodeOnNewThread(L, name, code, code_length, language, identity);
+        lua_State* newthread = frostbyte::TaskScheduler::startCodeOnNewThread(L, name, code, code_length, language, identity);
+        while (newthread && frostbyte::getTask(newthread))
+            gameCycle();
     } catch(std::exception& e) {
         frostbyte::Console::ScriptConsole.error(e.what());
     }
@@ -169,10 +180,7 @@ int main(int argc, char** argv) {
         frostbyte::getTask(userL)->identifier.assign(buf);
     }
 
-    frostbyte::Frostbyte::preRender();
-    frostbyte::Frostbyte::beginRender();
-    frostbyte::Frostbyte::endRender();
-    frostbyte::Frostbyte::postRender();
+    gameCycle();
 
     struct sigaction action{};
     action.sa_handler = handle_sigint;
@@ -197,17 +205,7 @@ int main(int argc, char** argv) {
             if (input == "exit")
                 break;
 
-            size_t original_thread_count = frostbyte::TaskScheduler::thread_list.size();
-
             tryRunCode(userL, "code", input.c_str(), input.size(), input_language);
-
-            // TODO: have a task finished callback instead of waiting for thread list size
-            while (frostbyte::TaskScheduler::thread_list.size() != original_thread_count) {
-                frostbyte::Frostbyte::preRender();
-                frostbyte::Frostbyte::beginRender();
-                frostbyte::Frostbyte::endRender();
-                frostbyte::Frostbyte::postRender();
-            }
         }
     }
 

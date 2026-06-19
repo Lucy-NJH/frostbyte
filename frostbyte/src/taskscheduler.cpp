@@ -302,7 +302,7 @@ void TaskScheduler::startFunctionOnNewThread(lua_State* L, Feedback feedback, in
     tryResumeThreadRaw(thread);
 }
 
-void TaskScheduler::startCodeOnNewThread(lua_State* L, const char* chunk_name, const char* code, size_t code_size, ScriptLanguage* language, const ThreadIdentity* identity, Feedback feedback, OnKill on_kill, Console* console) {
+lua_State* TaskScheduler::startCodeOnNewThread(lua_State* L, const char* chunk_name, const char* code, size_t code_size, ScriptLanguage* language, const ThreadIdentity* identity, Feedback feedback, OnKill on_kill, Console* console) {
     if (!feedback) {
         auto parent_task = getTask(L);
         assert(parent_task);
@@ -336,6 +336,8 @@ void TaskScheduler::startCodeOnNewThread(lua_State* L, const char* chunk_name, c
     if (console) task->console = console;
 
     tryResumeThreadRaw(thread);
+
+    return thread;
 }
 
 int TaskScheduler::yieldThread(lua_State* thread) {
