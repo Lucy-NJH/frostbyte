@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
 
     char lib_flags[120];
     memset(lib_flags, 0, 120);
-    snprintf(lib_flags, 120, "-std=c++17 -Wall -Werror -g -march=native -static-libstdc++ -static-libgcc -fPIC%s", headless);
+    snprintf(lib_flags, 120, "-std=c++17 -Wall -Werror -g -static-libstdc++ -static-libgcc -fPIC%s", headless);
 
     char build_dir[30];
     memset(build_dir, 0, 30);
