@@ -36,8 +36,8 @@ jobs:
         run: |
           git clone https://github.com/BLAKE3-team/BLAKE3.git
           cd BLAKE3/c
-          make
-          sudo make install
+          cmake -S c -B c/build "-DCMAKE_INSTALL_PREFIX=/usr/local"
+          cmake --build c/build --target install
       - name: build frostbyte dependencies
         run: |
           if [ ! -f "frostbyte/dependencies/built.txt" ]; then
