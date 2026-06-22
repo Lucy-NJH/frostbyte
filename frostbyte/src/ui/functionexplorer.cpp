@@ -48,14 +48,14 @@ namespace UI_FunctionExplorer_methods {
 }
 
 void UI_FunctionExplorer_init(lua_State* L, std::shared_ptr<rbxInstance> datamodel) {
-    auto FunctionExplorer = std::make_shared<rbxClass>();
-    FunctionExplorer->name.assign("FunctionExplorer");
-    FunctionExplorer->tags |= rbxClass::NotCreatable;
-    FunctionExplorer->superclass = rbxClass::class_map.at("Instance");
+    auto this_class = std::make_shared<rbxClass>();
+    this_class->name.assign("FunctionExplorer");
+    this_class->tags |= rbxClass::NotCreatable;
+    this_class->superclass = rbxClass::class_map.at("Instance");
 
-    FunctionExplorer->newMethod("SelectFunction", UI_FunctionExplorer_methods::selectFunction);
+    this_class->newMethod("SelectFunction", UI_FunctionExplorer_methods::selectFunction);
 
-    rbxClass::class_map.try_emplace("FunctionExplorer", FunctionExplorer);
+    rbxClass::class_map.try_emplace("FunctionExplorer", this_class);
     ServiceProvider::registerService("FunctionExplorer");
 
     ServiceProvider::createService(L, datamodel, "FunctionExplorer");

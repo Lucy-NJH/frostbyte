@@ -169,9 +169,13 @@ static int Enum__namecall(lua_State* L) {
     return func(L);
 }
 
-EnumItem* checkEnumItem(lua_State* L, int narg) {
-    void* ud = userdata::check(L, narg, userdata::EnumItem);
-    return *static_cast<EnumItem**>(ud);
+EnumItem* checkEnumItem(lua_State* L, int narg, const char* expected_enum = nullptr) {
+    EnumItem* enum_item = *static_cast<EnumItem**>(userdata::check(L, narg, userdata::EnumItem));
+
+    if (expected_enum && !strequal(enum_item->enum_name.c_str(), expected_enum))
+        luaL_error(L, "invalid argument #%d: wrong enum kind (expected %s, got %s)", narg, expected_enum, enum_item->enum_name.c_str());
+
+    return enum_item;
 }
 bool lua_isenumitem(lua_State* L, int narg) {
     return userdata::is(L, narg, userdata::EnumItem);
@@ -202,7 +206,7 @@ EnumItem* lua_checkenumitem(lua_State* L, int narg, const char* expected_enum) {
         }
     }
 
-    return checkEnumItem(L, narg);
+    return checkEnumItem(L, narg, expected_enum);
 }
 
 static int EnumItem__tostring(lua_State* L) {

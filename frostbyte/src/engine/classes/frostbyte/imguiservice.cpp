@@ -216,31 +216,31 @@ namespace ImGuiService_methods {
 std::shared_ptr<rbxInstance> ImGuiService;
 
 void ImGuiService_init(lua_State* L, std::shared_ptr<rbxInstance> datamodel) {
-    auto _class = std::make_shared<rbxClass>();
-    _class->name.assign("ImGuiService");
-    _class->tags |= rbxClass::NotCreatable;
-    _class->superclass = rbxClass::class_map.at("Instance");
+    auto this_class = std::make_shared<rbxClass>();
+    this_class->name.assign("ImGuiService");
+    this_class->tags |= rbxClass::NotCreatable;
+    this_class->superclass = rbxClass::class_map.at("Instance");
 
-    _class->newMethod("Begin", ImGuiService_methods::begin);
-    _class->newMethod("End", ImGuiService_methods::end);
+    this_class->newMethod("Begin", ImGuiService_methods::begin);
+    this_class->newMethod("End", ImGuiService_methods::end);
 
-    _class->newMethod("Text", ImGuiService_methods::text);
+    this_class->newMethod("Text", ImGuiService_methods::text);
 
-    _class->newMethod("Button", ImGuiService_methods::button);
-    _class->newMethod("Checkbox", ImGuiService_methods::checkbox);
-    _class->newMethod("Bullet", ImGuiService_methods::bullet);
+    this_class->newMethod("Button", ImGuiService_methods::button);
+    this_class->newMethod("Checkbox", ImGuiService_methods::checkbox);
+    this_class->newMethod("Bullet", ImGuiService_methods::bullet);
 
-    _class->newMethod("BeginCombo", ImGuiService_methods::beginCombo);
-    _class->newMethod("EndCombo", ImGuiService_methods::endCombo);
-    _class->newMethod("Combo", ImGuiService_methods::combo);
+    this_class->newMethod("BeginCombo", ImGuiService_methods::beginCombo);
+    this_class->newMethod("EndCombo", ImGuiService_methods::endCombo);
+    this_class->newMethod("Combo", ImGuiService_methods::combo);
 
-    _class->newMethod("InputText", ImGuiService_methods::inputText);
+    this_class->newMethod("InputText", ImGuiService_methods::inputText);
 
-    _class->newMethod("ColorEdit", ImGuiService_methods::colorEdit);
+    this_class->newMethod("ColorEdit", ImGuiService_methods::colorEdit);
 
-    _class->events.push_back(rbxEvent{ .name = "Render" });
+    this_class->events.push_back(rbxEvent{ .name = "Render" });
 
-    rbxClass::class_map.try_emplace("ImGuiService", _class);
+    rbxClass::class_map.try_emplace("ImGuiService", this_class);
     ServiceProvider::registerService("ImGuiService");
 
     ImGuiService = ServiceProvider::getService(L, datamodel, "ImGuiService");

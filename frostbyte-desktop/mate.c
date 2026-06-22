@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
     AddLibraryPaths(executable, path_buffer);
     LinkSystemLibraries(executable, "frostbyte");
 
-    LinkSystemLibraries(executable, "m", "stdc++", "raylib", "X11");
+    LinkSystemLibraries(executable, "m", "stdc++", "raylib", "X11", "crypto", "blake3", "zstd");
 
     setpath(path_buffer, path_buffer_size, frostbyte_path, "dependencies/luau/cmake")
     AddLibraryPaths(executable, path_buffer);

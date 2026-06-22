@@ -29,7 +29,9 @@ jobs:
             libxinerama-dev \
             libwayland-dev \
             libxkbcommon-dev \
-            libpsl-dev
+            libpsl-dev \
+            libssl-dev \
+            libzstd-dev
       - name: build frostbyte dependencies
         run: |
           if [ ! -f "frostbyte/dependencies/built.txt" ]; then

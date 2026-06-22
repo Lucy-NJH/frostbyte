@@ -4,6 +4,7 @@
 #include "engine/classes/coregui.hpp"
 #include "engine/classes/bindableevent.hpp"
 #include "engine/classes/datamodel.hpp"
+#include "engine/classes/encodingservice.hpp"
 #include "engine/classes/guiobject.hpp"
 #include "engine/classes/httpservice.hpp"
 #include "engine/classes/layercollector.hpp"
@@ -1970,6 +1971,8 @@ void rbxInstanceSetup(lua_State* L, std::string api_dump) {
     rbxInstance_TweenBase_init();
     rbxInstance_TextService_init();
 
+    rbxInstance_EncodingService_init();
+
     ServiceProvider::createService(L, datamodel, "UserInputService");
 
     UI_InstanceExplorer_init(datamodel);
@@ -1991,6 +1994,13 @@ void rbxInstanceSetup(lua_State* L, std::string api_dump) {
     lua_setglobal(L, "gethui");
 }
 void rbxInstanceCleanup(lua_State* L) {
+    // for (auto instance_weak : rbxInstance::instance_list)
+    //     if (auto instance = instance_weak.lock())
+    //         instance->~rbxInstance();
+
+    rbxInstance::instance_list.clear();
+
+    rbxInstance_EncodingService_cleanup();
 }
 
 std::shared_ptr<rbxInstance> hiddenui = nullptr;

@@ -311,6 +311,44 @@ static int fr_tsetfrozen(lua_State* L) {
     return 1;
 }
 
+static int fr_btostringhex(lua_State* L) {
+    size_t len;
+    char* buffer = static_cast<char*>(luaL_checkbuffer(L, 1, &len));
+
+    luaL_Strbuf buf;
+    luaL_buffinitsize(L, &buf, len * 2);
+
+    for (size_t i = 0; i < len; i++) {
+        char hex[3];
+        unsigned char v = (buffer[i] < 0) ? (unsigned char)(char)buffer[i] : (unsigned char)buffer[i];
+        snprintf(hex, 3, "%.2x", v);
+        luaL_addchar(&buf, hex[0]);
+        luaL_addchar(&buf, hex[1]);
+    }
+
+    luaL_pushresult(&buf);
+    return 1;
+}
+
+static int fr_stohex(lua_State* L) {
+    size_t len;
+    const char* str = luaL_checklstring(L, 1, &len);
+
+    luaL_Strbuf buf;
+    luaL_buffinitsize(L, &buf, len * 2);
+
+    for (size_t i = 0; i < len; i++) {
+        char hex[3];
+        unsigned char v = (str[i] < 0) ? (unsigned char)(char)str[i] : (unsigned char)str[i];
+        snprintf(hex, 3, "%.2x", v);
+        luaL_addchar(&buf, hex[0]);
+        luaL_addchar(&buf, hex[1]);
+    }
+
+    luaL_pushresult(&buf);
+    return 1;
+}
+
 static int fr_iswindowactive(lua_State* L) {
     lua_pushboolean(L, UserInputService::is_window_focused);
     return 1;
@@ -514,6 +552,20 @@ void open_frostbyte_environment(lua_State *L) {
     setfunctionfield(L, fr_trawfreeze, "rawfreeze");
     setfunctionfield(L, fr_trawunfreeze, "rawunfreeze");
     setfunctionfield(L, fr_tsetfrozen, "setfrozen");
+
+    lua_pop(L, 1);
+    }
+
+    {
+    lua_getglobal(L, "buffer");
+    setfunctionfield(L, fr_btostringhex, "tostringhex");
+
+    lua_pop(L, 1);
+    }
+
+    {
+    lua_getglobal(L, "string");
+    setfunctionfield(L, fr_stohex, "tohex");
 
     lua_pop(L, 1);
     }
