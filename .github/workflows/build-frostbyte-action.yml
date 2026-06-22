@@ -31,8 +31,13 @@ jobs:
             libxkbcommon-dev \
             libpsl-dev \
             libssl-dev \
-            libzstd-dev \
-            libblake3-dev
+            libzstd-dev
+      - name: install BLAKE3 from source
+        run: |
+          git clone https://github.com/BLAKE3-team/BLAKE3.git
+          cd BLAKE3/c
+          make
+          sudo make install
       - name: build frostbyte dependencies
         run: |
           if [ ! -f "frostbyte/dependencies/built.txt" ]; then
