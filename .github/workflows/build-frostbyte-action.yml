@@ -31,7 +31,8 @@ jobs:
             libxkbcommon-dev \
             libpsl-dev \
             libssl-dev \
-            libzstd-dev
+            libzstd-dev \
+            libblake3-dev
       - name: build frostbyte dependencies
         run: |
           if [ ! -f "frostbyte/dependencies/built.txt" ]; then
