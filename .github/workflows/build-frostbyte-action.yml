@@ -35,7 +35,7 @@ jobs:
       - name: install BLAKE3 from source
         run: |
           git clone https://github.com/BLAKE3-team/BLAKE3.git
-          cd BLAKE3/c
+          cd BLAKE3
           cmake -S c -B c/build "-DCMAKE_INSTALL_PREFIX=/usr/local"
           cmake --build c/build --target install
       - name: build frostbyte dependencies
