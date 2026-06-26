@@ -13,63 +13,9 @@ In addition, I am frequently making drastic changes on my local machine before p
 # BUILDING THE MODULE
 NOTE: frostbyte CURRENTLY does _not_ have a process for building neither for or on Windows. It is likely possible to cross compile via mingw, but that would require manual steps.
 
-First clone the repo and initialize submodules:
-```bash
-git clone https://github.com/frostbyte-engine/frostbyte.git
-cd frostbyte
-git submodule update --init --recursive
-```
+THIS SECTION IS UNDER CONSTRUCTION! I AM TOO LAZY TO TYPE PROPER STEPS BUT YOU CAN READ [this build script](./buildwrap.sh) FOR MORE SOME IDEAS
 
-frostbyte uses [mate.h](https://github.com/TomasBorquez/mate.h/) for its core build system, along with some python files to build the dependencies.
-<br>
-To build dependencies, first ensure you have their respective dependencies installed. You can usually find this on each project page, but here is a command you can run on Ubuntu for reference:
-```bash
-sudo apt-get install cmake build-essential git \
-    libasound2-dev \
-    libx11-dev \
-    libxrandr-dev \
-    libxi-dev \
-    libgl1-mesa-dev \
-    libglu1-mesa-dev \
-    libxcursor-dev \
-    libxinerama-dev \
-    libwayland-dev \
-    libxkbcommon-dev \
-    libpsl-dev
-```
-Then just run each script inside the dependencies folder with python:
-```bash
-cd frostbyte/dependencies
-
-python3 ./build_curl.py & python3 ./build_luau.py
-
-cd ..
-```
-
-then, compile and run mate.c (note that I target gcc, so clang and msvc may or may not be supported):
-```bash
-#inside ./frostbyte
-gcc -o mate mate.c
-./mate
-```
-
-You should now have a `frostbyte/build/libfrostbyte.a` file.
-<br>
-To build again, simply run `./mate` just like before and it will detect any changes made and recompile only what's needed.
-
-# BUILDING THE DESKTOP APPLICATION
-```bash
-cd frostbyte-desktop/dependencies
-
-python3 ./build_rlImGui.py & python3 ./build_ImGuiFileDialog.py
-
-cd ..
-
-gcc -o mate mate.c
-./mate
-```
-
-You should now have a `frostbyte-desktop/build/frostbyte` file.
+ALSO SEE THE [workflow file](./github/workflows/build-frostbyte-action.yml) FOR SYSTEM DEPENDENCY INFORMATION
 
 # LUAU
 frostbyte embeds [Luau](https://github.com/luau-lang/luau). See [luau_LICENSE.txt](luau_LICENSE.txt) for licensing information.
