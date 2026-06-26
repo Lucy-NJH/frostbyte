@@ -15,7 +15,7 @@ NOTE: frostbyte CURRENTLY does _not_ have a process for building neither for or 
 
 THIS SECTION IS UNDER CONSTRUCTION! I AM TOO LAZY TO TYPE PROPER STEPS BUT YOU CAN READ [this build script](./buildwrap.sh) FOR MORE SOME IDEAS
 
-ALSO SEE THE [workflow file](./github/workflows/build-frostbyte-action.yml) FOR SYSTEM DEPENDENCY INFORMATION
+ALSO SEE THE [workflow file](./.github/workflows/build-frostbyte-action.yml) FOR SYSTEM DEPENDENCY INFORMATION
 
 # LUAU
 frostbyte embeds [Luau](https://github.com/luau-lang/luau). See [luau_LICENSE.txt](luau_LICENSE.txt) for licensing information.
