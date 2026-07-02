@@ -97,7 +97,7 @@ public:
 class DrawEntryImage : public DrawEntry {
 public:
     Image* image = nullptr;
-    Texture2D texture;
+    Texture2D texture{};
 
     std::string data = "";
     Vector2 image_size{0, 0};
