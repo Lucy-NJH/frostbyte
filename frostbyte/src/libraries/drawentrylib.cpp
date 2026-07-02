@@ -887,38 +887,40 @@ void DrawEntry::render() {
 
                 const float rounding = entry_image->rounding;
 
-                if (rounding > 0) {
-                    float recx = entry_image->position.x;
-                    float recy = entry_image->position.y;
-                    float recw = entry_image->image_size.x;
-                    float rech = entry_image->image_size.y;
+                if (IsTextureValid(entry_image->texture)) {
+                    if (rounding > 0) {
+                        float recx = entry_image->position.x;
+                        float recy = entry_image->position.y;
+                        float recw = entry_image->image_size.x;
+                        float rech = entry_image->image_size.y;
 
-                    {
-                    float vec[] = { recx, rbxCamera::screen_size.y - recy - rech, recw, rech };
-                    SetShaderValue(round_shader, GetShaderLocation(round_shader, "rectangle"), vec, SHADER_UNIFORM_VEC4);
-                    }
+                        {
+                        float vec[] = { recx, rbxCamera::screen_size.y - recy - rech, recw, rech };
+                        SetShaderValue(round_shader, GetShaderLocation(round_shader, "rectangle"), vec, SHADER_UNIFORM_VEC4);
+                        }
 
-                    {
-                    float vec[] = { rounding, rounding, rounding, rounding };
-                    SetShaderValue(round_shader, GetShaderLocation(round_shader, "radius"), vec, SHADER_UNIFORM_VEC4);
-                    }
+                        {
+                        float vec[] = { rounding, rounding, rounding, rounding };
+                        SetShaderValue(round_shader, GetShaderLocation(round_shader, "radius"), vec, SHADER_UNIFORM_VEC4);
+                        }
 
-                    {
-                    float vec[] = { color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f };
-                    SetShaderValue(round_shader, GetShaderLocation(round_shader, "color"), vec, SHADER_UNIFORM_VEC4);
-                    }
+                        {
+                        float vec[] = { color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f };
+                        SetShaderValue(round_shader, GetShaderLocation(round_shader, "color"), vec, SHADER_UNIFORM_VEC4);
+                        }
 
-                    {
-                    float vec[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-                    SetShaderValue(round_shader, GetShaderLocation(round_shader, "shadowColor"), vec, SHADER_UNIFORM_VEC4);
-                    SetShaderValue(round_shader, GetShaderLocation(round_shader, "borderColor"), vec, SHADER_UNIFORM_VEC4);
-                    }
+                        {
+                        float vec[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+                        SetShaderValue(round_shader, GetShaderLocation(round_shader, "shadowColor"), vec, SHADER_UNIFORM_VEC4);
+                        SetShaderValue(round_shader, GetShaderLocation(round_shader, "borderColor"), vec, SHADER_UNIFORM_VEC4);
+                        }
 
-                    BeginShaderMode(round_shader);
-                        DrawTexture(entry_image->texture, recx, recy, WHITE);
-                    EndShaderMode();
-                } else
-                    DrawTexture(entry_image->texture, entry_image->position.x, entry_image->position.y, color);
+                        BeginShaderMode(round_shader);
+                            DrawTexture(entry_image->texture, recx, recy, WHITE);
+                        EndShaderMode();
+                    } else
+                        DrawTexture(entry_image->texture, entry_image->position.x, entry_image->position.y, color);
+                }
 
                 break;
             }
