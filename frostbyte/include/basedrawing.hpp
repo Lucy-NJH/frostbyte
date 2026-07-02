@@ -54,14 +54,15 @@ inline void drawingDrawQuad(Vector2* pointa, Vector2* pointb, Vector2* pointc, V
 
 inline void drawingDrawText(Vector2* position, Font* font, float text_size, Color* color, bool outlined, Color* outline_color, std::string_view text) {
     if (outlined) {
-        // top
-        DrawTextEx(*font, text.data(), { .x = position->x, .y = position->y - 1 }, text_size, 0, *outline_color);
-        // right
-        DrawTextEx(*font, text.data(), { .x = position->x + 1, .y = position->y }, text_size, 0, *outline_color);
-        // bottom
+        DrawTextEx(*font, text.data(), { .x = position->x + 1, .y = position->y + 1 }, text_size, 0, *outline_color);
+        DrawTextEx(*font, text.data(), { .x = position->x - 1, .y = position->y - 1 }, text_size, 0, *outline_color);
+        DrawTextEx(*font, text.data(), { .x = position->x + 1, .y = position->y - 1 }, text_size, 0, *outline_color);
         DrawTextEx(*font, text.data(), { .x = position->x - 1, .y = position->y + 1 }, text_size, 0, *outline_color);
-        // left
+
+        DrawTextEx(*font, text.data(), { .x = position->x + 1, .y = position->y }, text_size, 0, *outline_color);
         DrawTextEx(*font, text.data(), { .x = position->x - 1, .y = position->y }, text_size, 0, *outline_color);
+        DrawTextEx(*font, text.data(), { .x = position->x, .y = position->y - 1 }, text_size, 0, *outline_color);
+        DrawTextEx(*font, text.data(), { .x = position->x, .y = position->y + 1 }, text_size, 0, *outline_color);
     }
     DrawTextEx(*font, text.data(), *position, text_size, 0, *color);
 }
