@@ -875,10 +875,8 @@ void DrawEntry::render() {
             case DrawTypeText: {
                 DrawEntryText* entry_text = static_cast<DrawEntryText*>(entry);
                 auto position = entry_text->position;
-                if (entry_text->centered) {
+                if (entry_text->centered)
                     position.x -= entry_text->text_bounds.x / 2.f;
-                    position.y -= entry_text->text_bounds.y / 2.f;
-                }
                 drawingDrawText(&position, entry_text->font, entry_text->text_size, &color, entry_text->outlined, &entry_text->outline_color, entry_text->text);
                 break;
             }
